@@ -21,7 +21,7 @@
 			Initial database setup.
 		</description>
 		<sql>
-		CREATE TABLE dss_rule (
+		CREATE TABLE IF NOT EXISTS dss_rule (
   rule_id int(11) NOT NULL auto_increment,
   class_filename varchar(500) NOT NULL,
   creation_time datetime NOT NULL,
@@ -51,9 +51,9 @@
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 INSERT INTO scheduler_task_config
-   (`name`, `schedulable_class`, `start_time`, `start_time_pattern`, `repeat_interval`, `start_on_startup`, `started`, `created_by`, `date_created`)
-select 'ClassLoaderTask','org.openmrs.module.dss.ClassLoaderTask',
- NOW(), 'MM/dd/yyyy HH:mm:ss', 300, 1, 0, 1, NOW()
+   (`name`, `schedulable_class`, `start_time`, `start_time_pattern`, `repeat_interval`, `start_on_startup`, `started`, `created_by`, `date_created`, `uuid`)
+select 'ClassLoaderTask','org.openmrs.module.dss.ClassLoaderTask', 
+ NOW(), 'MM/dd/yyyy HH:mm:ss', 300, 1, 0, 1, NOW(), ''
  from 
 (select count(*) as cnt from scheduler_task_config where name='ClassLoaderTask') a
 where a.cnt=0;
