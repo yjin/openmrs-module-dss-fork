@@ -55,6 +55,7 @@ public class DssServiceImpl implements DssService {
         this.dao = dao;
     }
 
+    @Override
     public String runRulesAsString(Patient p,
             ArrayList<Rule> ruleList,
             String defaultPackagePrefix, String rulePackagePrefix) {
@@ -74,6 +75,7 @@ public class DssServiceImpl implements DssService {
         return reply;
     }
 
+    @Override
     public Result runRule(Patient p, Rule rule,
             String defaultPackagePrefix, String rulePackagePrefix) {
         ArrayList<Rule> ruleList = new ArrayList<Rule>();
@@ -93,6 +95,7 @@ public class DssServiceImpl implements DssService {
         return Result.emptyResult();
     }
 
+    @Override
     public ArrayList<Result> runRules(Patient p,
             ArrayList<Rule> ruleList,
             String defaultPackagePrefix, String rulePackagePrefix) {
@@ -145,12 +148,15 @@ public class DssServiceImpl implements DssService {
         }
     }
 
+    @Override
     public void loadRule(String rule, boolean updateRule) throws Exception {
         this.loadRule(rule, null, null, updateRule);
     }
 
+    @Override
     public void loadRule(String rule, String defaultPackagePrefix,
             String rulePackagePrefix, boolean updateRule) throws Exception {
+
         LogicService logicService = Context.getLogicService();
 
         //if we don't want to update the rule and the rule token
@@ -168,34 +174,34 @@ public class DssServiceImpl implements DssService {
                     .getGlobalProperty("dss.rulePackagePrefix"));
         }
 
-        Class clas = null;
+        Class ruleClass = null;
 
         // try to load the class dynamically
         if (!rule.contains(rulePackagePrefix)) {
             try {
-                clas = ccl.loadClass(rulePackagePrefix + rule);
+                ruleClass = ccl.loadClass(rulePackagePrefix + rule);
             } catch (Exception e) {
                 //ignore this exception
             }
         } else {
             try {
-                clas = ccl.loadClass(rule);
+                ruleClass = ccl.loadClass(rule);
             } catch (Exception e) {
                 //ignore this exception
             }
         }
 
         // try to load the class from the class library
-        if (clas == null && defaultPackagePrefix != null) {
+        if (ruleClass == null && defaultPackagePrefix != null) {
             if (!rule.contains(defaultPackagePrefix)) {
                 try {
-                    clas = ccl.loadClass(defaultPackagePrefix + rule);
+                    ruleClass = ccl.loadClass(defaultPackagePrefix + rule);
                 } catch (Exception e) {
                     //ignore this exception
                 }
             } else {
                 try {
-                    clas = ccl.loadClass(rule);
+                    ruleClass = ccl.loadClass(rule);
                 } catch (Exception e) {
                     //ignore this exception
                 }
@@ -203,21 +209,21 @@ public class DssServiceImpl implements DssService {
         }
 
         // try to load the class as it is
-        if (clas == null) {
+        if (ruleClass == null) {
             try {
-                clas = ccl.loadClass(rule);
+                ruleClass = ccl.loadClass(rule);
             } catch (Exception e) {
                 //ignore this exception
             }
         }
 
-        if (clas == null) {
+        if (ruleClass == null) {
             throw new Exception("Could not load class for rule: " + rule);
         }
 
         Object obj = null;
         try {
-            obj = clas.newInstance();
+            obj = ruleClass.newInstance();
         } catch (Exception e) {
             log.error("", e);
         }
