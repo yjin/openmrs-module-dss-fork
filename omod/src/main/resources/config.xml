@@ -10,8 +10,7 @@
     <package>@MODULE_PACKAGE@</package>
     <author>Vibha Anand and Tammy Dugan</author>
     <description>
-        This is a fork of the DSS module, modified to run in OpenMRS 1.9.x
-        DSS Module. Run DSS rules.
+        Dss Module. Run DSS rules.
     </description>
 
     <activator>@MODULE_PACKAGE@.DssActivator</activator>
@@ -20,8 +19,8 @@
 	
     <require_version>1.1.10.2283</require_version>
     <require_modules>
-        <!-- not anymore! -->
-        <!-- <require_module version="1.0.11">org.openmrs.module.chirdlutil</require_module> -->
+        <!--<require_module version="1.0.25">org.openmrs.module.chirdlutil</require_module>-->
+        <!--<require_module version="1.1.0">org.openmrs.module.chirdlutilbackports</require_module>-->
     </require_modules>	
 	
     <extension>
@@ -85,6 +84,19 @@
         <description>Order rules should be sorted when retrieved from the database.
             ASC - ascending, DESC - descending
         </description>
+    </globalProperty>
+    <globalProperty>
+        <property>dss.defaultPackagePrefix</property>
+        <defaultValue>org.openmrs.module.dss.ruleLibrary</defaultValue>
+        <description>The package prefix given to a set of precompiled rules.  This package is the default package used for rule tokens.</description>
+    </globalProperty>
+    <globalProperty>
+        <property>dss.physicianNoteConfigFile</property>
+        <description>The file location of the physician note configuration file.</description>
+    </globalProperty>
+    <globalProperty>
+        <property>dss.physicianNoteDirectory</property>
+        <description>The directory where the physician notes are stored.</description>
     </globalProperty>
 	
     <!-- Internationalization -->

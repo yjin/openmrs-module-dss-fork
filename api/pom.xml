@@ -4,15 +4,22 @@
     <parent>
         <groupId>org.openmrs.module</groupId>
         <artifactId>dss</artifactId>
-        <version>2.27.12-SNAPSHOT</version>
+        <version>2.27.23-SNAPSHOT</version>
     </parent>
     <groupId>org.openmrs.module</groupId>
     <artifactId>dss-api</artifactId>
     <packaging>jar</packaging>
-    <name>Dss API</name>
-    <description>API project for Dss</description>
+    <name>DSS API</name>
+    <description>API project for DSS</description>
 
     <dependencies>
+        <!-- 
+        Add other dependencies from lib:
+        <dependency>
+            <groupId>org.other.library</groupId>
+            <artifactId>library-name</artifactId>
+        </dependency>
+        -->	
         <dependency>
             <groupId>org.openmrs.api</groupId>
             <artifactId>openmrs-api</artifactId>
@@ -39,9 +46,15 @@
             <type>pom</type>
         </dependency>
         <dependency>
-            <groupId>org.jibx</groupId>
-            <artifactId>jibx-run</artifactId>
-            <version>1.1.6</version>
+            <groupId>org.openmrs.module</groupId>
+            <artifactId>logic-api</artifactId>
+            <version>0.5.1</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>itextpdf</artifactId>
+            <version>5.1.2</version>
             <type>jar</type>
         </dependency>
     </dependencies>

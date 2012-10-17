@@ -1,32 +1,32 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-    
-    <modelVersion>4.0.0</modelVersion>
-    
-    <groupId>org.openmrs.module</groupId>
-    <artifactId>dss</artifactId>
-    <version>2.27.12-SNAPSHOT</version>
-    <packaging>pom</packaging>
-    <name>Dss</name>
-    <description>Parent project for Dss</description>
+		xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
 
-    <url>http://openmrs.org</url>
+	<groupId>org.openmrs.module</groupId>
+	<artifactId>dss</artifactId>
+	<version>2.27.23-SNAPSHOT</version>
+	<packaging>pom</packaging>
+	<name>DSS</name>
+	<description>Parent project for DSS</description>
 
-    <scm>
-        <connection>scm:svn:http://svn.openmrs.org/openmrs-modules/dss/trunk/</connection>
-        <developerConnection>scm:svn:http://svn.openmrs.org/openmrs-modules/dss/trunk/</developerConnection>
-        <url>http://svn.openmrs.org/openmrs-modules/dss/trunk/</url>
-    </scm>
+	<url>http://openmrs.org</url>
 
-    <modules>
-        <module>api</module>
-        <module>omod</module>
-    </modules>
+	<scm>
+            <connection>scm:svn:http://svn.openmrs.org/openmrs-modules//trunk/</connection>
+            <developerConnection>scm:svn:http://svn.openmrs.org/openmrs-modules//trunk/</developerConnection>
+            <url>http://svn.openmrs.org/openmrs-modules//trunk/</url>
+	</scm>
 
-    <dependencyManagement>
-        <dependencies>
+	<modules>
+		<module>api</module>
+		<module>omod</module>
+	</modules>
+
+	<dependencyManagement>
+            <dependencies>
             <!--
             Libraries from lib to add as dependencies with compile or runtime scope:
+		
             Find matching dependencies in maven central repository.
             <dependency>
                 <groupId>org.other.library</groupId>
@@ -34,7 +34,7 @@
                 <version>library.version</version>
                 <scope>compile</scope>
             </dependency>
-            -->			
+            -->		
             <dependency>
                 <groupId>org.openmrs.api</groupId>
                 <artifactId>openmrs-api</artifactId>
@@ -70,16 +70,11 @@
                 <type>pom</type>
                 <scope>test</scope>
             </dependency>
-            <dependency>
-                <groupId>org.openmrs.module</groupId>
-                <artifactId>logic-api</artifactId>
-                <version>0.5.1</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
     <properties>
-        <openMRSVersion>1.8.0</openMRSVersion>
+        <openMRSVersion>1.9.0</openMRSVersion>
     </properties>
 
     <build>
@@ -109,6 +104,7 @@
             <url>http://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
         </repository>
     </repositories>
+
     <pluginRepositories>
         <pluginRepository>
             <id>openmrs-repo</id>

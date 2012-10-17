@@ -1,6 +1,7 @@
 package org.openmrs.module.dss.db.hibernate;
 
 import java.util.List;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.SQLQuery;
@@ -57,7 +58,6 @@ public class HibernateDssDAO implements DssDAO {
         return null;
     }
 
-    @Override
     public Rule getRule(String tokenName) {
         try {
             String sql = "select * from dss_rule where token_name=?";
@@ -72,7 +72,6 @@ public class HibernateDssDAO implements DssDAO {
         return null;
     }
 
-    @Override
     public void deleteRule(int ruleId) {
         try {
             Rule rule = this.getRule(ruleId);
@@ -82,7 +81,6 @@ public class HibernateDssDAO implements DssDAO {
         }
     }
 
-    @Override
     public Rule addOrUpdateRule(Rule rule) {
         try {
             // If the rule type for the rule to save is still null,
@@ -99,7 +97,6 @@ public class HibernateDssDAO implements DssDAO {
         return null;
     }
 
-    @Override
     public List<Rule> getPrioritizedRules(String type) throws DAOException {
         try {
             AdministrationService adminService = Context

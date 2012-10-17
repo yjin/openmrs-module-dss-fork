@@ -1,8 +1,11 @@
+/**
+ *
+ */
 package org.openmrs.module.dss.test.util;
 
 import java.util.Calendar;
-import junit.framework.TestCase;
 import org.openmrs.module.dss.util.Util;
+import junit.framework.TestCase;
 
 /**
  * @author tmdugan
@@ -15,9 +18,13 @@ public class TestUtil extends TestCase {
      */
     public void testConvertUnitsToMetric() {
         assertEquals(20.0, Util.convertUnitsToMetric(20, null));
+
         assertEquals(50.8, Util.convertUnitsToMetric(20, "in"));
+
         assertEquals(9.071847400000001, Util.convertUnitsToMetric(20, "lb"));
+
         assertEquals(20.0, Util.convertUnitsToMetric(20, "cm"));
+
     }
 
     public void testToProperCase() {

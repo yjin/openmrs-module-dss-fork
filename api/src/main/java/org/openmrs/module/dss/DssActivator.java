@@ -6,8 +6,7 @@ import org.apache.commons.logging.LogFactory;
 import org.openmrs.GlobalProperty;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.context.Context;
-import org.openmrs.api.context.ContextAuthenticationException;
-import org.openmrs.module.Activator;
+import org.openmrs.module.BaseModuleActivator;
 import org.openmrs.module.dss.util.Util;
 
 /**
@@ -16,15 +15,14 @@ import org.openmrs.module.dss.util.Util;
  * @author Tammy Dugan
  *
  */
-public class DssActivator implements Activator {
+public class DssActivator extends BaseModuleActivator {
 
     private Log log = LogFactory.getLog(this.getClass());
 
     /**
-     * @see org.openmrs.module.Activator#startup()
+     * @see org.openmrs.module.BaseModuleActivator#started()
      */
-    @Override
-    public void startup() {
+    public void started() {
         this.log.info("Starting Dss Module");
 
         //check that all the required global properties are set
@@ -39,9 +37,9 @@ public class DssActivator implements Activator {
                     .getGlobalProperty("scheduler.password"));
             Iterator<GlobalProperty> properties = adminService
                     .getAllGlobalProperties().iterator();
-            GlobalProperty currProperty;
-            String currValue;
-            String currName;
+            GlobalProperty currProperty = null;
+            String currValue = null;
+            String currName = null;
 
             while (properties.hasNext()) {
                 currProperty = properties.next();
@@ -54,7 +52,7 @@ public class DssActivator implements Activator {
                     }
                 }
             }
-        } catch (ContextAuthenticationException e) {
+        } catch (Exception e) {
             this.log.error("Error checking global properties for dss module");
             this.log.error(e.getMessage());
             this.log.error(Util.getStackTrace(e));
@@ -63,10 +61,9 @@ public class DssActivator implements Activator {
     }
 
     /**
-     * @see org.openmrs.module.Activator#shutdown()
+     * @see org.openmrs.module.BaseModuleActivator#stopped()
      */
-    @Override
-    public void shutdown() {
+    public void stopped() {
         this.log.info("Shutting down Dss Module");
     }
 }
