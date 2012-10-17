@@ -1,6 +1,6 @@
 .DS_Store
 target/
-
+.svn/
 *.class
 
 # Package Files #

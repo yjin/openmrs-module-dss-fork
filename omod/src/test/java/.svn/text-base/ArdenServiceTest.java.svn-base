@@ -56,8 +56,7 @@ public class ArdenServiceTest extends BaseModuleContextSensitiveTest {
 			ruleList.add(currRule);
 		}
 		
-		String result = dssService.runRulesAsString(patient, ruleList,
-				"org.openmrs.module.atd.ruleLibrary.",null);
+		String result = dssService.runRulesAsString(patient, ruleList);
 		System.out.println("result is: "+result);
 	}
 }

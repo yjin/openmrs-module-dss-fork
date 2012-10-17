@@ -1,8 +1,8 @@
 10
 
 dir
-29236
-http://svn.openmrs.org/openmrs-modules/dss/trunk/omod/src/test/java/org/openmrs/module/dss/test/util
+29458
+http://svn.openmrs.org/openmrs-modules/dss/branches/dss%201.7.x%20compatible/omod/src/test/java/org/openmrs/module/dss/test/util
 http://svn.openmrs.org
 
 
@@ -32,7 +32,7 @@ file
 
 
 
-2012-09-06T23:33:46.687445Z
+2012-10-11T16:43:26.859725Z
 26f441fbe326465e664cf638cc27b916
 2009-11-11T18:13:16.685231Z
 11195

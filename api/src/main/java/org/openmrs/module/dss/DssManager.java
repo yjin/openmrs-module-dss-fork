@@ -44,10 +44,9 @@ public class DssManager
 	 * @param type rule type
 	 * @param override true if the dssElements should be re-populated
 	 * @param parameters parameters to be passed to rule evaluation
-	 * @param defaultPackagePrefix package to look in for pre-compiled rules
 	 */
 	public void populateDssElements(String type, boolean override,
-			Map<String, Object> parameters,String defaultPackagePrefix)
+			Map<String, Object> parameters)
 	{
 		if(this.dssElementsByType == null)
 		{
@@ -77,46 +76,32 @@ public class DssManager
 		ArrayList<Result> results = null;
 		Result currResult = null;
 		int maxDssElements = getMaxDssElementsByType(type);
-		int batchSize = maxDssElements;
-		AdministrationService adminService = Context.getAdministrationService();
-		final int BATCH_SIZE = Integer.parseInt(adminService
-				.getGlobalProperty("dss.batchSizeRunRules"));
-
 		
 		//Run rules until there are maxDssElements non-null results
-		//Run the rules in batches until the number of elements is reached.
-		while (dssElements.size() < maxDssElements && iter.hasNext())
-		{
+		while (dssElements.size() < maxDssElements && iter.hasNext()) {
 			ruleList = new ArrayList<Rule>();
-
-			//get the batch size number of rules that meet the age restrictions
-			while(ruleList.size() < batchSize && iter.hasNext())
-			{
-				currRule = iter.next();
-				currRule.setParameters(parameters);
-				
-				if(currRule.checkAgeRestrictions(this.patient)){
-					ruleList.add(currRule);
-				}
+			
+			//get rules that meet the age restrictions
+			currRule = iter.next();
+			parameters.put("promptPosition", Integer.toString(dssElements.size() + 1));
+			currRule.setParameters(parameters);
+			
+			if (currRule.checkAgeRestrictions(this.patient)) {
+				ruleList.add(currRule);
+			} else {
+				continue;//skip to the beginning of the loop if the age restrictions are not met
 			}
-
-			results = dssService.runRules(this.patient, ruleList,
-					defaultPackagePrefix,null);
-
+			
+			results = dssService.runRules(this.patient, ruleList);
+			
 			//only add results that are non-null
-			for (int i = 0; i < ruleList.size() &&
-			 	i < results.size()&&dssElements.size() < maxDssElements; i++)
-			{
-				currRule = ruleList.get(i);
-				currResult = results.get(i);
-				if (currResult != null&&!currResult.isNull())
-				{
-					currDssElement = new DssElement(currResult,
-							currRule.getRuleId());
-					dssElements.add(currDssElement);
-				}
+			
+			currRule = ruleList.get(0);
+			currResult = results.get(0);
+			if (currResult != null && !currResult.isNull()) {
+				currDssElement = new DssElement(currResult, currRule.getRuleId());
+				dssElements.add(currDssElement);
 			}
-			batchSize = BATCH_SIZE;
 		}
 	}
 

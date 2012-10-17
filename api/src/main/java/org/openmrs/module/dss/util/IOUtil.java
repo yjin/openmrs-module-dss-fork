@@ -4,6 +4,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -12,26 +13,28 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.Arrays;
+import java.util.InvalidPropertiesFormatException;
+import java.util.Properties;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.util.OpenmrsUtil;
-// import com.lowagie.text.Document;
-// import com.lowagie.text.Image;
-// import com.lowagie.text.PageSize;
-// import com.lowagie.text.Rectangle;
-// import com.lowagie.text.pdf.PdfWriter;
-// import com.lowagie.text.pdf.RandomAccessFileOrArray;
-// import com.lowagie.text.pdf.codec.TiffImage;
+import com.itextpdf.text.Document;
+import com.itextpdf.text.Image;
+import com.itextpdf.text.PageSize;
+import com.itextpdf.text.Rectangle;
+import com.itextpdf.text.pdf.PdfWriter;
+import com.itextpdf.text.pdf.RandomAccessFileOrArray;
+import com.itextpdf.text.pdf.codec.TiffImage;
 
 /**
  * This class contains utility methods to aide in IO processing.
  *
  * @author Tammy Dugan, Andrew Martin
- *
  */
 public class IOUtil {
 
-    protected static final Log log = LogFactory.getLog(IOUtil.class);
+    protected static final Log log = LogFactory
+            .getLog(IOUtil.class);
     private final static int BUFFER_SIZE = 4096;
 
     /**
@@ -44,7 +47,7 @@ public class IOUtil {
      * finished
      * @throws IOException
      */
-    public synchronized static void bufferedReadWrite(Reader input, Writer output,
+    public static void bufferedReadWrite(Reader input, Writer output,
             int bufferSize, boolean closeOutput) throws IOException {
         int bytesRead = 0;
         char[] buff = new char[bufferSize];
@@ -69,7 +72,7 @@ public class IOUtil {
      * finished
      * @throws IOException
      */
-    public synchronized static void bufferedReadWrite(Reader input, Writer output,
+    public void bufferedReadWrite(Reader input, Writer output,
             boolean closeOutput) throws IOException {
         bufferedReadWrite(input, output, BUFFER_SIZE, closeOutput);
     }
@@ -81,7 +84,7 @@ public class IOUtil {
      * @param output Writer place to write content
      * @throws IOException
      */
-    public synchronized static void bufferedReadWrite(Reader input, Writer output)
+    public static void bufferedReadWrite(Reader input, Writer output)
             throws IOException {
         bufferedReadWrite(input, output, BUFFER_SIZE, true);
     }
@@ -94,7 +97,7 @@ public class IOUtil {
      * @param bufferSize int size of data buffer
      * @throws IOException
      */
-    public synchronized static void bufferedReadWrite(Reader input, Writer output,
+    public static void bufferedReadWrite(Reader input, Writer output,
             int bufferSize) throws IOException {
         bufferedReadWrite(input, output, bufferSize, true);
     }
@@ -108,7 +111,7 @@ public class IOUtil {
      * @param closeOutput whether the OutputStream should be closed
      * @throws IOException
      */
-    public synchronized static void bufferedReadWrite(InputStream input,
+    public static void bufferedReadWrite(InputStream input,
             OutputStream output, boolean closeOutput) throws IOException {
         bufferedReadWrite(input, output, BUFFER_SIZE, closeOutput);
     }
@@ -121,7 +124,7 @@ public class IOUtil {
      * @param output OutputStream place to write content
      * @throws IOException
      */
-    public synchronized static void bufferedReadWrite(InputStream input, OutputStream output)
+    public static void bufferedReadWrite(InputStream input, OutputStream output)
             throws IOException {
         bufferedReadWrite(input, output, BUFFER_SIZE, true);
     }
@@ -135,7 +138,7 @@ public class IOUtil {
      * @param bufferSize int size of data buffer
      * @throws IOException
      */
-    public synchronized static void bufferedReadWrite(InputStream input,
+    public static void bufferedReadWrite(InputStream input,
             OutputStream output, int bufferSize) throws IOException {
         bufferedReadWrite(input, output, bufferSize, true);
     }
@@ -150,7 +153,7 @@ public class IOUtil {
      * @param closeOutput boolean whether the OutputStream should be closed
      * @throws IOException
      */
-    public synchronized static void bufferedReadWrite(InputStream input,
+    public static void bufferedReadWrite(InputStream input,
             OutputStream output, int bufferSize, boolean closeOutput)
             throws IOException {
         int bytesRead = 0;
@@ -187,7 +190,7 @@ public class IOUtil {
      * @param targetFilename name of the target file location
      * @throws Exception
      */
-    public synchronized static void copyFile(String sourceFilename, String targetFilename) throws Exception {
+    public static void copyFile(String sourceFilename, String targetFilename) throws Exception {
         copyFile(sourceFilename, targetFilename, false);
     }
 
@@ -201,7 +204,7 @@ public class IOUtil {
      * Please use this method with caution, the file size is type casted to int
      * as opposed to long which is what the length() returns.
      */
-    public synchronized static void copyFile(String sourceFilename, String targetFilename, boolean useBufferSize) throws Exception {
+    public static void copyFile(String sourceFilename, String targetFilename, boolean useBufferSize) throws Exception {
         try {
             File srcFile = new File(sourceFilename);
             FileInputStream sourceFile = new FileInputStream(srcFile);
@@ -227,7 +230,7 @@ public class IOUtil {
      *
      * @param filename file to delete
      */
-    public synchronized static void deleteFile(String filename) {
+    public static void deleteFile(String filename) {
         File file = new File(filename);
 
         if (!file.exists()) {
@@ -270,7 +273,7 @@ public class IOUtil {
      * @param oldname old file name
      * @param newname new file name
      */
-    public synchronized static void renameFile(String oldname, String newname) {
+    public static void renameFile(String oldname, String newname) {
         File file = new File(oldname);
 
         if (!file.exists()) {
@@ -314,13 +317,13 @@ public class IOUtil {
      * @param xmlDirectory specific directory
      * @return String[] list of file names
      */
-    public synchronized static String[] getFilesInDirectory(String xmlDirectory) {
+    public static String[] getFilesInDirectory(String xmlDirectory) {
         File dir = new File(xmlDirectory);
 
         return dir.list();
     }
 
-    public synchronized static File[] getFilesInDirectory(String directoryName, final String[] fileExtensions) {
+    public static File[] getFilesInDirectory(String directoryName, final String[] fileExtensions) {
         File directory = new File(directoryName);
 
         File[] files = directory.listFiles(new FilenameFilter() {
@@ -342,7 +345,7 @@ public class IOUtil {
      * @param filepath path to the file
      * @return String file name without an extension or directory path
      */
-    public synchronized static String getFilenameWithoutExtension(String filepath) {
+    public static String getFilenameWithoutExtension(String filepath) {
         String filename = filepath;
         int index = filename.lastIndexOf("/");
         int index2 = filename.lastIndexOf("\\");
@@ -364,7 +367,7 @@ public class IOUtil {
         return filename;
     }
 
-    public synchronized static String getDirectoryName(String filepath) {
+    public static String getDirectoryName(String filepath) {
         //if there is no dot, then the filepath 
         //is already a directory
         if (filepath.lastIndexOf(".") < 0) {
@@ -391,7 +394,7 @@ public class IOUtil {
      * @param fileDirectory file directory path
      * @return String formatted file directory path
      */
-    public synchronized static String formatDirectoryName(String fileDirectory) {
+    public static String formatDirectoryName(String fileDirectory) {
         if (fileDirectory == null
                 || fileDirectory.length() == 0) {
             fileDirectory = OpenmrsUtil.getApplicationDataDirectory();
@@ -413,33 +416,31 @@ public class IOUtil {
     public static void convertTifToPDF(String tiff, OutputStream pdf) {
 
         try {
-            /*
-             Document document = new Document(PageSize.LETTER,0, 0, 0, 0);
-             Rectangle rect = document.getPageSize();
-             Float pageWidth = rect.width();
-             Float pageHeight = rect.height();
-                        
-             PdfWriter.getInstance(document, pdf);
-             document.open();
-			
-             RandomAccessFileOrArray ra = new RandomAccessFileOrArray(tiff);
-             int pages = TiffImage.getNumberOfPages(ra);
-             for (int i = 1; i <= pages; i++) {
-             Image image = TiffImage.getTiffImage(ra, i);
-				
-             Float heightPercent = (pageHeight/image.scaledHeight())*100;
-             Float widthPercent = (pageWidth/image.scaledWidth())*100;
-				
-             image.scalePercent(heightPercent, widthPercent);
-				
-             document.add(image);
-             if(i < pages){
-             document.newPage();
-             }
-             }
+            Document document = new Document(PageSize.LETTER, 0, 0, 0, 0);
+            Rectangle rect = document.getPageSize();
+            Float pageWidth = rect.getWidth();
+            Float pageHeight = rect.getHeight();
 
-             document.close();
-             * */
+            PdfWriter.getInstance(document, pdf);
+            document.open();
+
+            RandomAccessFileOrArray ra = new RandomAccessFileOrArray(tiff);
+            int pages = TiffImage.getNumberOfPages(ra);
+            for (int i = 1; i <= pages; i++) {
+                Image image = TiffImage.getTiffImage(ra, i);
+
+                Float heightPercent = (pageHeight / image.getScaledHeight()) * 100;
+                Float widthPercent = (pageWidth / image.getScaledWidth()) * 100;
+
+                image.scalePercent(heightPercent, widthPercent);
+
+                document.add(image);
+                if (i < pages) {
+                    document.newPage();
+                }
+            }
+
+            document.close();
         } catch (Exception e) {
             log.error("", e);
         }
@@ -472,5 +473,21 @@ public class IOUtil {
         File imagefile = new File(imageFilename);
 
         return imagefile;
+    }
+
+    public static Properties getProps(String filename) {
+        try {
+
+            Properties prop = new Properties();
+            InputStream propInputStream = new FileInputStream(filename);
+            prop.loadFromXML(propInputStream);
+            return prop;
+
+        } catch (FileNotFoundException e) {
+        } catch (InvalidPropertiesFormatException e) {
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+        }
+        return null;
     }
 }

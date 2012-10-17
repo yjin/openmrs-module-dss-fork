@@ -2,7 +2,7 @@
 
 dir
 0
-http://svn.openmrs.org/openmrs-modules/dss/trunk/omod/src/test/resources
+http://svn.openmrs.org/openmrs-modules/dss/branches/dss%201.7.x%20compatible/omod/src/test/resources
 http://svn.openmrs.org
 add
 
@@ -26,14 +26,14 @@ add
 
 5bac5841-c719-aa4e-b3fe-cce5062f897a
 
-TestingApplicationContext.xml
+test-hibernate.cfg.xml
 file
 
 
 
 add
 
-test-hibernate.cfg.xml
+TestingApplicationContext.xml
 file
 
 

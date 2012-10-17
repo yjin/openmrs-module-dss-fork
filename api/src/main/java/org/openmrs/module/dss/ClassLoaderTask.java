@@ -1,7 +1,11 @@
 package org.openmrs.module.dss;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.api.AdministrationService;
@@ -20,9 +24,11 @@ import org.openmrs.scheduler.TaskDefinition;
 public class ClassLoaderTask extends AbstractTask {
 
     private Log log = LogFactory.getLog(this.getClass());
-    private TaskDefinition taskConfig;
     private String javaRuleDirectory = null;
     private String mlmRuleDirectory = null;
+    private String classRulesDirectory = null;
+    private String rulePackagePrefix = null;
+    private boolean initialLoad = true;
 
     /**
      * Assigns locations of directories to look for files to compile/transform
@@ -40,12 +46,25 @@ public class ClassLoaderTask extends AbstractTask {
             log.error("You must set the global property dss.mlmRuleDirectory");
         }
         this.mlmRuleDirectory = IOUtil.formatDirectoryName(property);
+
+        property = adminService.getGlobalProperty("dss.classRuleDirectory");
+        if (property == null) {
+            log.error("You must set the global property dss.classRuleDirectory");
+        }
+        this.classRulesDirectory = IOUtil.formatDirectoryName(property);
+
+        property = adminService.getGlobalProperty("dss.rulePackagePrefix");
+        if (property == null) {
+            log.error("You must set the global property dss.rulePackagePrefix");
+        }
+        this.rulePackagePrefix = Util.formatPackagePrefix(property);
     }
 
     @Override
     public void initialize(TaskDefinition config) {
         this.log.info("Initializing class loader task...");
-        this.taskConfig = config;
+        super.initialize(config);
+        initialLoad = true;
         this.log.info("Finished initializing class loader task.");
     }
 
@@ -53,13 +72,10 @@ public class ClassLoaderTask extends AbstractTask {
     public void execute() {
         Context.openSession();
         try {
-            if (Context.isAuthenticated() == false) {
-                authenticate();
-            }
             lookForNewClasses();
         } catch (Exception e) {
             log.error(e.getMessage());
-            log.error(Util.getStackTrace(e));
+            log.error(org.openmrs.module.dss.util.Util.getStackTrace(e));
         } finally {
             Context.closeSession();
         }
@@ -73,10 +89,47 @@ public class ClassLoaderTask extends AbstractTask {
         DssService dssService = Context.getService(DssService.class);
 
         //look for mlm file rule tokens
-        this.lookForRules(this.mlmRuleDirectory, rules, ".mlm");
+        HashMap<String, File> mlmFileMap = this.lookForRules(this.mlmRuleDirectory, ".mlm");
 
         //look for java file rule tokens
-        this.lookForRules(this.javaRuleDirectory, rules, ".java");
+        HashMap<String, File> javaFileMap = this.lookForRules(this.javaRuleDirectory, ".java");
+
+        String classDirectory = "";
+        if (this.classRulesDirectory != null) {
+            classDirectory = this.classRulesDirectory;
+        }
+        if (this.rulePackagePrefix != null) {
+            classDirectory += this.rulePackagePrefix.replace('.', '/');
+        }
+
+        //look for java class file rule tokens
+        HashMap<String, File> javaClassFileMap = this.lookForRules(classDirectory, ".class");
+
+        // Check java rules against java class first
+        Set<Entry<String, File>> entrySet = javaFileMap.entrySet();
+        Iterator<Entry<String, File>> iter = entrySet.iterator();
+        while (iter.hasNext()) {
+            Entry<String, File> entry = iter.next();
+            String filename = entry.getKey();
+            File javaFile = entry.getValue();
+            File classFile = javaClassFileMap.get(filename);
+            if (initialLoad || classFile == null || (javaFile.lastModified() > classFile.lastModified())) {
+                rules.add(filename);
+            }
+        }
+
+        // Check mlm rules against java rules next
+        entrySet = mlmFileMap.entrySet();
+        iter = entrySet.iterator();
+        while (iter.hasNext()) {
+            Entry<String, File> entry = iter.next();
+            String filename = entry.getKey();
+            File mlmFile = entry.getValue();
+            File javaFile = javaFileMap.get(filename);
+            if (initialLoad || javaFile == null || (mlmFile.lastModified() > javaFile.lastModified())) {
+                rules.add(filename);
+            }
+        }
 
         //load rule tokens into LogicService
         for (String ruleName : rules) {
@@ -87,23 +140,30 @@ public class ClassLoaderTask extends AbstractTask {
                 log.error(Util.getStackTrace(e));
             }
         }
+
+        initialLoad = false;
     }
 
-    private void lookForRules(String directoryName, HashSet<String> rules, String ext) {
+    private HashMap<String, File> lookForRules(String directoryName, String ext) {
+        HashMap<String, File> files = new HashMap<String, File>();
         String[] fileExtensions = new String[]{ext};
 
         File[] filesInDirectory = IOUtil.getFilesInDirectory(directoryName, fileExtensions);
         if (filesInDirectory == null) {
-            return;
+            return files;
         }
+
         int length = filesInDirectory.length;
         String currFile = null;
 
         for (int i = 0; i < length; i++) {
-            currFile = IOUtil.getFilenameWithoutExtension(filesInDirectory[i].getPath());
+            File file = filesInDirectory[i];
+            currFile = IOUtil.getFilenameWithoutExtension(file.getPath());
             if (currFile != null && currFile.length() > 0) {
-                rules.add(currFile);
+                files.put(currFile, file);
             }
         }
+
+        return files;
     }
 }

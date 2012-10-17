@@ -1,15 +1,15 @@
 10
 
 dir
-29236
-http://svn.openmrs.org/openmrs-modules/dss/trunk/omod/src/test/java
+29458
+http://svn.openmrs.org/openmrs-modules/dss/branches/dss%201.7.x%20compatible/omod/src/test/java
 http://svn.openmrs.org
 add
 
 
-2009-11-11T18:13:16.685231Z
-11195
-tmdugan
+2011-08-26T18:32:10.254398Z
+22931
+sjmckee
 
 
 
@@ -19,12 +19,35 @@ tmdugan
 
 
 copied
-http://svn.openmrs.org/openmrs-modules/dss/trunk/test
-29236
+http://svn.openmrs.org/openmrs-modules/dss/branches/dss%201.7.x%20compatible/test
+29458
 
 
 
 5bac5841-c719-aa4e-b3fe-cce5062f897a
+
+test
+dir
+
+
+
+add
+
+
+
+
+
+
+
+
+
+
+
+
+
+copied
+http://svn.openmrs.org/openmrs-modules/dss/branches/dss%201.7.x%20compatible/test
+29458
 
 org
 dir
@@ -53,11 +76,11 @@ file
 
 
 
-2012-09-06T23:33:46.687445Z
-106b1675fd5bbff1850dbab8a922665b
-2008-11-19T19:36:08.480873Z
-6064
-tmdugan
+2012-10-11T16:43:26.859725Z
+c51644405dacf1ff2942ff88f98ddc87
+2011-08-26T18:32:10.254398Z
+22931
+sjmckee
 
 
 
@@ -79,5 +102,5 @@ copied
 
 
 
-1947
+1898
 

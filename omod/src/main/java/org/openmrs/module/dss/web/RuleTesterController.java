@@ -12,7 +12,6 @@ import org.openmrs.api.context.Context;
 import org.openmrs.logic.result.Result;
 import org.openmrs.module.dss.hibernateBeans.Rule;
 import org.openmrs.module.dss.service.DssService;
-import org.openmrs.module.dss.util.Util;
 import org.springframework.web.servlet.mvc.SimpleFormController;
 
 /**
@@ -71,8 +70,7 @@ public class RuleTesterController extends SimpleFormController {
                     if (currRule != null
                             && currRule.checkAgeRestrictions(patient)) {
                         currRule.setParameters(parameters);
-                        Result result = dssService.runRule(patient, currRule,
-                                null, null);
+                        Result result = dssService.runRule(patient, currRule);
 
                         if (result.size() < 2) {
                             map.put("runResult", result.toString());
@@ -89,7 +87,7 @@ public class RuleTesterController extends SimpleFormController {
 
             } catch (Exception e) {
                 this.log.error(e.getMessage());
-                this.log.error(Util.getStackTrace(e));
+                this.log.error(org.openmrs.module.dss.util.Util.getStackTrace(e));
             }
         }
         if (ruleName != null && ruleName.length() > 0) {

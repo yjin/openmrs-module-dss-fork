@@ -2,7 +2,7 @@
 
 dir
 0
-http://svn.openmrs.org/openmrs-modules/dss/trunk/omod/src/test
+http://svn.openmrs.org/openmrs-modules/dss/branches/dss%201.7.x%20compatible/omod/src/test
 http://svn.openmrs.org
 add
 
@@ -26,13 +26,6 @@ add
 
 5bac5841-c719-aa4e-b3fe-cce5062f897a
 
-resources
-dir
-
-
-
-add
-
 java
 dir
 
@@ -53,6 +46,13 @@ add
 
 
 copied
-http://svn.openmrs.org/openmrs-modules/dss/trunk/test
-29236
+http://svn.openmrs.org/openmrs-modules/dss/branches/dss%201.7.x%20compatible/test
+29458
+
+resources
+dir
+
+
+
+add
 

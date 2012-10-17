@@ -1,11 +1,18 @@
+/**
+ *
+ */
 package org.openmrs.module.dss.util;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.security.DigestException;
+import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 import org.apache.commons.logging.Log;
@@ -45,7 +52,7 @@ public class Util {
      * @param measurementUnits units of the measurement
      * @return double metric value of the measurement
      */
-    public synchronized static double convertUnitsToMetric(double measurement,
+    public static double convertUnitsToMetric(double measurement,
             String measurementUnits) {
         if (measurementUnits == null) {
             return measurement;
@@ -69,7 +76,7 @@ public class Util {
      * @param measurementUnits units of the measurement
      * @return double English value of the measurement
      */
-    public synchronized static double convertUnitsToEnglish(double measurement,
+    public static double convertUnitsToEnglish(double measurement,
             String measurementUnits) {
         if (measurementUnits == null) {
             return measurement;
@@ -92,7 +99,7 @@ public class Util {
      * @param input alphanumeric input
      * @return String all numeric
      */
-    public synchronized static String extractIntFromString(String input) {
+    public static String extractIntFromString(String input) {
         if (input == null) {
             return null;
         }
@@ -110,14 +117,44 @@ public class Util {
      * @param packagePrefix a java package prefix
      * @return String formatted package prefix
      */
-    public synchronized static String formatPackagePrefix(String packagePrefix) {
+    public static String formatPackagePrefix(String packagePrefix) {
         if (packagePrefix != null && !packagePrefix.endsWith(".")) {
             packagePrefix += ".";
         }
         return packagePrefix;
     }
 
-    public synchronized static String toProperCase(String str) {
+    /**
+     * Parses a giving string into a list of package prefixes based on the
+     * delimiter provided. This will also add a period (if necessary) to each of
+     * the package prefixes. This will not return null.
+     *
+     * @param packagePrefixes one or more java package prefix
+     * @param delimiter the delimiter that separates the package prefixes in the
+     * packagePrefixes parameter.
+     * @return List of Strings containing formatted package prefixes
+     */
+    public static List<String> formatPackagePrefixes(String packagePrefixes, String delimiter) {
+        List<String> packagePrefixList = new ArrayList<String>();
+        if (packagePrefixes == null) {
+            return packagePrefixList;
+        }
+
+        StringTokenizer tokenizer = new StringTokenizer(packagePrefixes, delimiter, false);
+        while (tokenizer.hasMoreTokens()) {
+            String packagePrefix = tokenizer.nextToken().trim();
+            if (packagePrefix.length() == 0) {
+                continue;
+            }
+
+            packagePrefix = formatPackagePrefix(packagePrefix);
+            packagePrefixList.add(packagePrefix);
+        }
+
+        return packagePrefixList;
+    }
+
+    public static String toProperCase(String str) {
         if (str == null || str.length() < 1) {
             return str;
         }
@@ -145,7 +182,7 @@ public class Util {
         return resultString.toString();
     }
 
-    public synchronized static double getFractionalAgeInUnits(Date birthdate, Date today, String unit) {
+    public static double getFractionalAgeInUnits(Date birthdate, Date today, String unit) {
         int ageInUnits = getAgeInUnits(birthdate, today, unit);
         Calendar birthdateCalendar = Calendar.getInstance();
         birthdateCalendar.setTime(birthdate);
@@ -229,7 +266,7 @@ public class Util {
      * @param unit unit to calculate age in (days, weeks, months, years)
      * @return int age in the given units
      */
-    public synchronized static int getAgeInUnits(Date birthdate, Date today, String unit) {
+    public static int getAgeInUnits(Date birthdate, Date today, String unit) {
         if (birthdate == null) {
             return 0;
         }
@@ -298,7 +335,7 @@ public class Util {
         return days;
     }
 
-    public synchronized static Double round(Double value, int decimalPlaces) {
+    public static Double round(Double value, int decimalPlaces) {
         if (decimalPlaces < 0 || value == null) {
             return value;
         }
@@ -308,14 +345,14 @@ public class Util {
         return intermVal / (Math.pow(10, decimalPlaces));
     }
 
-    public synchronized static String getStackTrace(Exception x) {
+    public static String getStackTrace(Exception x) {
         OutputStream buf = new ByteArrayOutputStream();
         PrintStream p = new PrintStream(buf);
         x.printStackTrace(p);
         return buf.toString();
     }
 
-    public synchronized static String archiveStamp() {
+    public static String archiveStamp() {
         Date currDate = new java.util.Date();
         String dateFormat = "yyyyMMdd-kkmmss-SSS";
         SimpleDateFormat formatter = new SimpleDateFormat(dateFormat);
@@ -323,7 +360,7 @@ public class Util {
         return formattedDate;
     }
 
-    public synchronized static boolean isToday(Date date) {
+    public static boolean isToday(Date date) {
         if (date != null) {
             Calendar today = Calendar.getInstance();
             Calendar dateToCompare = Calendar.getInstance();
@@ -337,7 +374,7 @@ public class Util {
         return false;
     }
 
-    public synchronized static String removeTrailingZeros(String str1) {
+    public static String removeTrailingZeros(String str1) {
 
         char[] chars = str1.toCharArray();
         int index = chars.length - 1;
@@ -352,7 +389,7 @@ public class Util {
         return str1;
     }
 
-    public synchronized static String removeLeadingZeros(String mrn) {
+    public static String removeLeadingZeros(String mrn) {
 
         char[] chars = mrn.toCharArray();
         int index = 0;
@@ -367,7 +404,8 @@ public class Util {
         return mrn;
     }
 
-    public synchronized static Obs saveObs(Patient patient, Concept currConcept, int encounterId, String value) {
+    public static Obs saveObs(Patient patient, Concept currConcept, int encounterId, String value,
+            Date obsDatetime) {
         if (value == null || value.length() == 0) {
             return null;
         }
@@ -392,6 +430,9 @@ public class Util {
             } else {
                 obs.setValueCoded(answer);
             }
+        } else if (datatypeName.equalsIgnoreCase("Date")) {
+            Date valueDatetime = new Date(Long.valueOf(value));
+            obs.setValueDatetime(valueDatetime);
         } else {
             obs.setValueText(value);
         }
@@ -405,8 +446,56 @@ public class Util {
         obs.setConcept(currConcept);
         obs.setLocation(location);
         obs.setEncounter(encounter);
-        obs.setObsDatetime(new Date());
+        obs.setObsDatetime(obsDatetime);
         obsService.saveObs(obs, null);
         return obs;
+    }
+
+    /**
+     * Calculates age to a precision of days, weeks, months, or years based on a
+     * set of rules
+     *
+     * @param birthdate patient's birth date
+     * @param cutoff date to calculate age from
+     * @return String age with units
+     */
+    public static String adjustAgeUnits(Date birthdate, Date cutoff) {
+        int years = getAgeInUnits(birthdate, cutoff, YEAR_ABBR);
+        int months = getAgeInUnits(birthdate, cutoff, MONTH_ABBR);
+        int weeks = getAgeInUnits(birthdate, cutoff, WEEK_ABBR);
+        int days = getAgeInUnits(birthdate, cutoff, DAY_ABBR);
+
+        if (years >= 2) {
+            return years + " " + YEAR_ABBR;
+        }
+
+        if (months >= 2) {
+            return months + " " + MONTH_ABBR;
+        }
+
+        if (days > 30) {
+            return weeks + " " + WEEK_ABBR;
+        }
+
+        return days + " " + DAY_ABBR;
+    }
+
+    public static String computeMD5(String strToMD5) throws DigestException {
+        try {
+            //get md5 of input string
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.reset();
+            md.update(strToMD5.getBytes());
+            byte[] bytes = md.digest();
+
+            //convert md5 bytes to a hex string
+            StringBuffer hexString = new StringBuffer();
+            for (int i = 0; i < bytes.length; i++) {
+                hexString.append(Integer.toHexString(0xFF & bytes[i]));
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            throw new DigestException("couldn't make digest of partial content");
+        }
     }
 }
