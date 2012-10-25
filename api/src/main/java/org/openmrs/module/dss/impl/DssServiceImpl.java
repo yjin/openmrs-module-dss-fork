@@ -159,11 +159,16 @@ public class DssServiceImpl implements DssService {
 
     @Override
     public org.openmrs.logic.Rule loadRule(String rule, boolean updateRule) throws Exception {
+        log.info("Going to load rule '" + rule + "' from HashMap...");
         org.openmrs.logic.Rule loadedRule = loadedRuleMap.get(rule);
+
         if (loadedRule != null && !updateRule) {
             // The rule has already been loaded, and an update is not needed.
+            log.info("Rule '" + rule + "' found in HashMap");
             return loadedRule;
         }
+
+        log.info("Rule '" + rule + "' was not found in HashMap");
 
         // Create a CompilingClassLoader
         CompilingClassLoader ccl = CompilingClassLoader.getInstance();
@@ -172,34 +177,37 @@ public class DssServiceImpl implements DssService {
         String rulePackagePrefix = Util.formatPackagePrefix(adminService
                 .getGlobalProperty("dss.rulePackagePrefix"));
 
-        Class<?> clas = null;
+        Class<?> classObject = null;
 
         // try to load the class dynamically
         if (!rule.contains(rulePackagePrefix)) {
             try {
-                clas = ccl.loadClass(rulePackagePrefix + rule);
+                log.info("Tyring with " + rulePackagePrefix + rule + "...");
+                classObject = ccl.loadClass(rulePackagePrefix + rule);
             } catch (Exception e) {
                 //ignore this exception
             }
         } else {
             try {
-                clas = ccl.loadClass(rule);
+                log.info("Tyring with " + rule + "...");
+                classObject = ccl.loadClass(rule);
             } catch (Exception e) {
                 //ignore this exception
             }
         }
 
         // try to load the class from the class library
-        if (clas == null) {
+        if (classObject == null) {
             String defaultPackagePrefixProp = adminService.getGlobalProperty("dss.defaultPackagePrefix");
             List<String> defaultPackagePrefixes = Util.formatPackagePrefixes(defaultPackagePrefixProp, ",");
             if (defaultPackagePrefixes.size() > 0) {
                 int cnt = 0;
-                while ((clas == null) && (cnt < defaultPackagePrefixes.size())) {
+                while ((classObject == null) && (cnt < defaultPackagePrefixes.size())) {
                     String defaultPackagePrefix = defaultPackagePrefixes.get(cnt++);
                     if (!rule.contains(defaultPackagePrefix)) {
                         try {
-                            clas = ccl.loadClass(defaultPackagePrefix + rule);
+                            log.info("Tyring with " + defaultPackagePrefix + rule + "...");
+                            classObject = ccl.loadClass(defaultPackagePrefix + rule);
                         } catch (Exception e) {
                             //ignore this exception
                         }
@@ -209,21 +217,23 @@ public class DssServiceImpl implements DssService {
         }
 
         // try to load the class as it is
-        if (clas == null) {
+        if (classObject == null) {
             try {
-                clas = ccl.loadClass(rule);
+                log.info("Tyring with " + rule + "...");
+                classObject = ccl.loadClass(rule);
             } catch (Exception e) {
                 //ignore this exception
             }
         }
 
-        if (clas == null) {
+        if (classObject == null) {
             throw new Exception("Could not load class for rule: " + rule);
         }
 
         Object obj = null;
+
         try {
-            obj = clas.newInstance();
+            obj = classObject.newInstance();
         } catch (Exception e) {
             log.error("", e);
         }
@@ -236,7 +246,7 @@ public class DssServiceImpl implements DssService {
         loadedRule = (org.openmrs.logic.Rule) obj;
 
         try {
-            Context.getService(TokenService.class).registerToken(rule, new DssRuleProvider(), clas.getName());
+            Context.getService(TokenService.class).registerToken(rule, new DssRuleProvider(), classObject.getName());
             loadedRuleMap.put(rule, loadedRule);
         } catch (Exception e) {
             log.error("", e);
