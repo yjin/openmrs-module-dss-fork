@@ -12,24 +12,23 @@ import org.openmrs.api.APIException;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.db.DAOException;
+import org.openmrs.arden.MlmRule;
 import org.openmrs.logic.LogicService;
 import org.openmrs.logic.impl.LogicCriteriaImpl;
 import org.openmrs.logic.result.Result;
 import org.openmrs.logic.token.TokenService;
-import org.openmrs.module.dss.util.IOUtil;
-import org.openmrs.module.dss.util.Util;
 import org.openmrs.module.dss.CompilingClassLoader;
-import org.openmrs.module.dss.DssRule;
 import org.openmrs.module.dss.DssRuleProvider;
 import org.openmrs.module.dss.db.DssDAO;
 import org.openmrs.module.dss.hibernateBeans.Rule;
 import org.openmrs.module.dss.service.DssService;
+import org.openmrs.module.dss.util.IOUtil;
+import org.openmrs.module.dss.util.Util;
 
 /**
  * Defines implementations of services used by this module
  *
  * @author Tammy Dugan
- *
  */
 public class DssServiceImpl implements DssService {
 
@@ -60,11 +59,12 @@ public class DssServiceImpl implements DssService {
         this.dao = dao;
     }
 
+    @Override
     public String runRulesAsString(Patient p, List<Rule> ruleList) {
         ArrayList<Result> results = this.runRules(p, ruleList);
         String reply = "";
 
-        if (results == null || results.size() == 0) {
+        if (results == null || results.isEmpty()) {
             return "No rules run!!!!";
         }
 
@@ -76,6 +76,7 @@ public class DssServiceImpl implements DssService {
         return reply;
     }
 
+    @Override
     public Result runRule(Patient p, Rule rule) {
         ArrayList<Rule> ruleList = new ArrayList<Rule>();
         ruleList.add(rule);
@@ -94,9 +95,10 @@ public class DssServiceImpl implements DssService {
         return Result.emptyResult();
     }
 
+    @Override
     public ArrayList<Result> runRules(Patient p, List<Rule> ruleList) {
         ArrayList<Result> results = new ArrayList<Result>();
-        Map<String, Object> parameters = null;
+        Map<String, Object> parameters;
         String ruleName = null;
         LogicService logicSvc = Context.getLogicService();
         DssRuleProvider ruleProvider = new DssRuleProvider();
@@ -125,10 +127,10 @@ public class DssServiceImpl implements DssService {
 
                 long startTime = System.currentTimeMillis();
                 Result result;
+
                 try {
                     result = logicSvc.eval(p.getPatientId(), new LogicCriteriaImpl(ruleName), parameters);
                     results.add(result);
-
                 } catch (APIAuthenticationException e) {
                     //ignore a privilege exception
                 } catch (Exception e) {
@@ -145,7 +147,6 @@ public class DssServiceImpl implements DssService {
                     System.out.println("logicSvc.eval time(" + ruleName + ", " + threadName + "): " + elapsedTime);
                 }
             }
-
             return results;
 
         } catch (Exception e) {
@@ -156,6 +157,7 @@ public class DssServiceImpl implements DssService {
         }
     }
 
+    @Override
     public org.openmrs.logic.Rule loadRule(String rule, boolean updateRule) throws Exception {
         org.openmrs.logic.Rule loadedRule = loadedRuleMap.get(rule);
         if (loadedRule != null && !updateRule) {
@@ -243,27 +245,33 @@ public class DssServiceImpl implements DssService {
         return loadedRule;
     }
 
+    @Override
     public Rule getRule(int ruleId) throws APIException {
         return getDssDAO().getRule(ruleId);
     }
 
+    @Override
     public List<Rule> getPrioritizedRules(String type) throws DAOException {
         return getDssDAO().getPrioritizedRules(type);
     }
 
+    @Override
     public List<Rule> getNonPrioritizedRules(String type) throws DAOException {
         return getDssDAO().getNonPrioritizedRules(type);
     }
 
+    @Override
     public List<Rule> getRules(Rule rule, boolean ignoreCase, boolean enableLike, String sortColumn) {
         return getDssDAO().getRules(rule, ignoreCase, enableLike, sortColumn);
     }
 
+    @Override
     public void deleteRule(int ruleId) {
         getDssDAO().deleteRule(ruleId);
     }
 
-    public Rule addRule(String classFilename, DssRule rule) throws APIException {
+    @Override
+    public Rule addRule(String classFilename, MlmRule rule) throws APIException {
         String tokenName = IOUtil.getFilenameWithoutExtension(classFilename);
         Rule databaseRule = getDssDAO().getRule(tokenName);
 

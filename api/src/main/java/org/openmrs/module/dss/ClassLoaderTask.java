@@ -34,25 +34,32 @@ public class ClassLoaderTask extends AbstractTask {
      * Assigns locations of directories to look for files to compile/transform
      */
     public ClassLoaderTask() {
+        log.info(this.getClass().getCanonicalName() + " is starting...");
+
         AdministrationService adminService = Context.getAdministrationService();
+
+        // directory where the service can find the Java files
         String property = adminService.getGlobalProperty("dss.javaRuleDirectory");
         if (property == null) {
             log.error("You must set the global property dss.javaRuleDirectory");
         }
         this.javaRuleDirectory = IOUtil.formatDirectoryName(property);
 
+        // directory where the service can find the MLM files
         property = adminService.getGlobalProperty("dss.mlmRuleDirectory");
         if (property == null) {
             log.error("You must set the global property dss.mlmRuleDirectory");
         }
         this.mlmRuleDirectory = IOUtil.formatDirectoryName(property);
 
+        // directory where the classes will be located after compilation
         property = adminService.getGlobalProperty("dss.classRuleDirectory");
         if (property == null) {
             log.error("You must set the global property dss.classRuleDirectory");
         }
         this.classRulesDirectory = IOUtil.formatDirectoryName(property);
 
+        // prefix for the DSS rule package
         property = adminService.getGlobalProperty("dss.rulePackagePrefix");
         if (property == null) {
             log.error("You must set the global property dss.rulePackagePrefix");

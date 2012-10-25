@@ -27,6 +27,7 @@ import org.openmrs.module.ModuleFactory;
 import org.openmrs.module.dss.util.IOUtil;
 import org.openmrs.module.dss.util.Util;
 import org.openmrs.module.dss.service.DssService;
+import org.openmrs.arden.MlmRule;
 import org.openmrs.util.OpenmrsClassLoader;
 
 /**
@@ -302,7 +303,6 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
         //only check super classloader for non-dynamic rules
         if (this.rulePackagePrefix == null
                 || (this.rulePackagePrefix != null && !name.startsWith(this.rulePackagePrefix))) {
-
             try {
                 return super.findClass(name);
             } catch (Exception e) {
@@ -329,6 +329,7 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
             if (this.javaRuleDirectory != null) {
                 javaFilename = this.javaRuleDirectory;
             }
+            javaFilename += this.rulePackagePrefix.replace('.', '/');
             javaFilename += fileStub + ".java";
             String classFilename = "";
             if (this.classRulesDirectory != null) {
@@ -442,10 +443,10 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
                     // load class filename into rule table
                     try {
                         Object obj = clas.newInstance();
-                        if (obj instanceof DssRule) {
+                        if (obj instanceof MlmRule) {
                             DssService dssService = Context
                                     .getService(DssService.class);
-                            dssService.addRule(classFilename, (DssRule) obj);
+                            dssService.addRule(classFilename, (MlmRule) obj);
                         }
                     } catch (Exception e) {
                         log.error("Error saving rule class file: "

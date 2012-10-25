@@ -13,7 +13,6 @@ import org.openmrs.module.dss.util.Util;
  * Purpose: Checks that module specific global properties have been set
  *
  * @author Tammy Dugan
- *
  */
 public class DssActivator extends BaseModuleActivator {
 
@@ -22,33 +21,32 @@ public class DssActivator extends BaseModuleActivator {
     /**
      * @see org.openmrs.module.BaseModuleActivator#started()
      */
+    @Override
     public void started() {
-        this.log.info("Starting Dss Module");
-
-        //check that all the required global properties are set
+        log.info("Starting Dss Module");
+        // check that all the required global properties are set
         checkGlobalProperties();
     }
 
     private void checkGlobalProperties() {
         try {
+            log.info("Checking if records in global_property are set up correctly...");
             AdministrationService adminService = Context.getAdministrationService();
             Context.authenticate(adminService
                     .getGlobalProperty("scheduler.username"), adminService
                     .getGlobalProperty("scheduler.password"));
             Iterator<GlobalProperty> properties = adminService
                     .getAllGlobalProperties().iterator();
-            GlobalProperty currProperty = null;
-            String currValue = null;
-            String currName = null;
-
+            GlobalProperty currProperty;
+            String currValue;
+            String currName;
             while (properties.hasNext()) {
                 currProperty = properties.next();
                 currName = currProperty.getProperty();
                 if (currName.startsWith("dss")) {
                     currValue = currProperty.getPropertyValue();
                     if (currValue == null || currValue.length() == 0) {
-                        this.log.error("You must set a value for global property: "
-                                + currName);
+                        this.log.error("You must set a value for global property: " + currName);
                     }
                 }
             }
@@ -56,13 +54,13 @@ public class DssActivator extends BaseModuleActivator {
             this.log.error("Error checking global properties for dss module");
             this.log.error(e.getMessage());
             this.log.error(Util.getStackTrace(e));
-
         }
     }
 
     /**
      * @see org.openmrs.module.BaseModuleActivator#stopped()
      */
+    @Override
     public void stopped() {
         this.log.info("Shutting down Dss Module");
     }
