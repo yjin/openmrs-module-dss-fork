@@ -268,19 +268,36 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
      */
     @Override
     public Class<?> loadClass(String name) throws ClassNotFoundException {
+        log.info("Trying to load class " + name + "...");
+        Class classObject = null;
         try {
-            return getParent().loadClass(name);
+            classObject = getParent().loadClass(name);
+            if (classObject instanceof Class) {
+                log.info("Class found!");
+            }
+            return classObject;
         } catch (Exception e) {
+            log.info("Class not found.");
         }
+
         Collection<ModuleClassLoader> classLoaders = ModuleFactory.getModuleClassLoaders();
 
         for (ModuleClassLoader classLoader : classLoaders) {
             try {
-                return classLoader.loadClass(name);
+                classObject = classLoader.loadClass(name);
+                if (classObject instanceof Class) {
+                    log.info("Class found!");
+                }
+                return classObject;
             } catch (Exception e) {
+                log.info("Class not found (with loader " + classLoader.getClass().getSimpleName() + ").");
             }
         }
-        return findClass(name);
+        classObject = findClass(name);
+        if (classObject instanceof Class) {
+            log.info("Class found!");
+        }
+        return classObject;
     }
 
     private Class defineDynamicClass(String name, byte raw[]) {

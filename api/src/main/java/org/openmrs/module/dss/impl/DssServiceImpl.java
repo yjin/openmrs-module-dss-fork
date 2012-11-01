@@ -171,6 +171,7 @@ public class DssServiceImpl implements DssService {
         log.info("Rule '" + rule + "' was not found in HashMap");
 
         // Create a CompilingClassLoader
+        log.info("Creating a " + CompilingClassLoader.class.getName() + "...");
         CompilingClassLoader ccl = CompilingClassLoader.getInstance();
 
         AdministrationService adminService = Context.getAdministrationService();
@@ -182,14 +183,12 @@ public class DssServiceImpl implements DssService {
         // try to load the class dynamically
         if (!rule.contains(rulePackagePrefix)) {
             try {
-                log.info("Tyring with " + rulePackagePrefix + rule + "...");
                 classObject = ccl.loadClass(rulePackagePrefix + rule);
             } catch (Exception e) {
                 //ignore this exception
             }
         } else {
             try {
-                log.info("Tyring with " + rule + "...");
                 classObject = ccl.loadClass(rule);
             } catch (Exception e) {
                 //ignore this exception
@@ -206,7 +205,6 @@ public class DssServiceImpl implements DssService {
                     String defaultPackagePrefix = defaultPackagePrefixes.get(cnt++);
                     if (!rule.contains(defaultPackagePrefix)) {
                         try {
-                            log.info("Tyring with " + defaultPackagePrefix + rule + "...");
                             classObject = ccl.loadClass(defaultPackagePrefix + rule);
                         } catch (Exception e) {
                             //ignore this exception
@@ -219,7 +217,6 @@ public class DssServiceImpl implements DssService {
         // try to load the class as it is
         if (classObject == null) {
             try {
-                log.info("Tyring with " + rule + "...");
                 classObject = ccl.loadClass(rule);
             } catch (Exception e) {
                 //ignore this exception
