@@ -22,12 +22,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.context.Context;
+import org.openmrs.arden.MlmRule;
 import org.openmrs.module.ModuleClassLoader;
 import org.openmrs.module.ModuleFactory;
+import org.openmrs.module.dss.service.DssService;
 import org.openmrs.module.dss.util.IOUtil;
 import org.openmrs.module.dss.util.Util;
-import org.openmrs.module.dss.service.DssService;
-import org.openmrs.arden.MlmRule;
 import org.openmrs.util.OpenmrsClassLoader;
 
 /**
@@ -139,11 +139,15 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
 
         String classpath = getClasspath();
 
+        log.info("CLASSPATH is " + classpath);
+
         try {
             if (this.classRulesDirectory == null) {
+                log.error("Global property dss.classRuleDirectory must be set.");
                 throw new Exception("Global property dss.classRuleDirectory must be set.");
             }
             String[] options = new String[]{"-classpath", classpath, "-d", this.classRulesDirectory};
+            log.info("Options are {" + options[0] + "," + options[1] + "," + options[2] + "," + options[3] + "}");
 
             File file = new File(javaFile);
 
@@ -182,7 +186,7 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
         Collection<ModuleClassLoader> moduleClassLoaders =
                 ModuleFactory.getModuleClassLoaders();
 
-        //check module dependencies
+        // check module dependencies
         for (ModuleClassLoader currClassLoader : moduleClassLoaders) {
             URL[] urls = currClassLoader.getURLs();
             for (URL url : urls) {
