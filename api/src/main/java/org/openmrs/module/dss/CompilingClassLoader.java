@@ -281,7 +281,7 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
             }
             return classObject;
         } catch (Exception e) {
-            log.info("Class not found.");
+            log.info("Class not found: " + e.getMessage());
         }
 
         Collection<ModuleClassLoader> classLoaders = ModuleFactory.getModuleClassLoaders();
@@ -294,12 +294,14 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
                 }
                 return classObject;
             } catch (Exception e) {
-                log.info("Class not found (with loader " + classLoader.getClass().getSimpleName() + ").");
+                log.info("Class not found: " + e.getMessage());
             }
         }
         classObject = findClass(name);
         if (classObject instanceof Class) {
             log.info("Class found!");
+        } else {
+            log.info("Class not found.");
         }
         return classObject;
     }
@@ -315,22 +317,25 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
     // The heart of the ClassLoader -- automatically compile
     // source as necessary when looking for class files
     @Override
-    public Class findClass(String name)
-            throws ClassNotFoundException {
+    public Class findClass(String name) throws ClassNotFoundException {
+
         boolean compiledNewClassfile = false;
         boolean updateRuleTable = false;
-        Class clas = null;
+        Class classObject = null;
+
         // Our goal is to get a Class object
-        //only check super classloader for non-dynamic rules
+        // only check super classloader for non-dynamic rules
         if (this.rulePackagePrefix == null
                 || (this.rulePackagePrefix != null && !name.startsWith(this.rulePackagePrefix))) {
             try {
+                log.info("Trying with URLClassLoader...");
                 return super.findClass(name);
             } catch (Exception e) {
+                log.info("Class not found: " + e.getMessage());
             }
         }
-        //if the class is not found, look in rule directory
-        if (clas == null) {
+        // if the class is not found, look in rule directory
+        if (classObject == null) {
             // Create a pathname from the class name
             // E.g. java.lang.Object => java/lang/Object
             String fileStub = name;
@@ -444,26 +449,26 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
                 //otherwise find the loaded class
                 if (!compiledNewClassfile) {
                     try {
-                        clas = findLoadedClass(name);
-                        if (clas == null) {
-                            clas = getInstance().classMap.get(name);
+                        classObject = findLoadedClass(name);
+                        if (classObject == null) {
+                            classObject = getInstance().classMap.get(name);
                         }
                     } catch (Exception e) {
                     }
                 }
-                if (compiledNewClassfile || clas == null) {
+                if (compiledNewClassfile || classObject == null) {
                     // read the bytes
                     byte raw[] = getBytes(classFilename);
                     // try to turn them into a class
                     CompilingClassLoader compilingClassLoader = new CompilingClassLoader(this);
-                    clas = compilingClassLoader.defineDynamicClass(name, raw);
-                    getInstance().classMap.put(name, clas);
+                    classObject = compilingClassLoader.defineDynamicClass(name, raw);
+                    getInstance().classMap.put(name, classObject);
                 }
 
                 if (updateRuleTable) {
                     // load class filename into rule table
                     try {
-                        Object obj = clas.newInstance();
+                        Object obj = classObject.newInstance();
                         if (obj instanceof MlmRule) {
                             DssService dssService = Context
                                     .getService(DssService.class);
@@ -483,6 +488,6 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
                 //load precompiled rules from the dynamic directory
             }
         }
-        return clas;
+        return classObject;
     }
 }
