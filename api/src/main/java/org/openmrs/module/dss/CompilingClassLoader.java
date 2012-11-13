@@ -149,15 +149,26 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
             String[] options = new String[]{"-classpath", classpath, "-d", this.classRulesDirectory};
             log.info("Options are {" + options[0] + "," + options[1] + "," + options[2] + "," + options[3] + "}");
 
+            log.info("Going to load file: " + javaFile);
             File file = new File(javaFile);
 
+            if (file == null) {
+                log.error("File is NULL!");
+            } else {
+                log.info("File loaded.");
+            }
+
+            log.info("Going to get the SystemJavaCompiler...");
             JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+            log.info("Going to get the StandardFileManager...");
             StandardJavaFileManager fileManager = compiler
                     .getStandardFileManager(null, null, null);
 
+            log.info("Going to get the JavaFileObjects...");
             Iterable<? extends JavaFileObject> fileObjects = fileManager
                     .getJavaFileObjects(file);
             StringWriter writer = new StringWriter();
+            log.info("Going to compile...");
             boolean success = compiler.getTask(writer, fileManager, null,
                     Arrays.asList(options), null, fileObjects).call();
 
@@ -180,6 +191,7 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
      * @return String classpath
      */
     public String getClasspath() {
+        log.info("Going to build classpath...");
         String classpath = "";
         HashSet<String> classpathFiles = new HashSet<String>();
 
@@ -203,7 +215,8 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
                 URL[] urls = ((URLClassLoader) currClassLoader).getURLs();
 
                 for (URL url : urls) {
-                    classpathFiles.add(url.getPath().substring(1));
+                    // classpathFiles.add(url.getPath().substring(1));
+                    classpathFiles.add(url.getPath());
                 }
             }
             currClassLoader = currClassLoader.getParent();
