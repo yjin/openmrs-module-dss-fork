@@ -101,12 +101,13 @@ public class DssServiceImpl implements DssService {
         ArrayList<Result> results = new ArrayList<Result>();
         Map<String, Object> parameters;
         String ruleName = null;
+
         log.info("Going to get the LogicService...");
         LogicService logicSvc = Context.getLogicService();
+
         log.info("Going to instantiate a DssRuleProvider...");
         DssRuleProvider ruleProvider = new DssRuleProvider();
         String threadName = Thread.currentThread().getName();
-        log.info("Thread name is " + threadName);
 
         try {
             for (Rule rule : ruleList) {
@@ -173,12 +174,10 @@ public class DssServiceImpl implements DssService {
         org.openmrs.logic.Rule loadedRule = loadedRuleMap.get(rule);
 
         if (loadedRule != null && !updateRule) {
-            // The rule has already been loaded, and an update is not needed.
-            log.info("Rule '" + rule + "' found in HashMap");
+            // the rule has already been loaded, and an update is not needed.
+            log.info("Rule '" + rule + "' found in HashMap. Not forcing update.");
             return loadedRule;
         }
-
-        log.info("Rule '" + rule + "' was not found in HashMap");
 
         // Create a CompilingClassLoader
         log.info("Creating a " + CompilingClassLoader.class.getName() + "...");
@@ -195,13 +194,13 @@ public class DssServiceImpl implements DssService {
             try {
                 classObject = ccl.loadClass(rulePackagePrefix + rule);
             } catch (Exception e) {
-                //ignore this exception
+                // ignore this exception
             }
         } else {
             try {
                 classObject = ccl.loadClass(rule);
             } catch (Exception e) {
-                //ignore this exception
+                // ignore this exception
             }
         }
 
@@ -234,6 +233,7 @@ public class DssServiceImpl implements DssService {
         }
 
         if (classObject == null) {
+            log.info("Class was not found.");
             throw new Exception("Could not load class for rule: " + rule);
         }
 
@@ -253,6 +253,7 @@ public class DssServiceImpl implements DssService {
         loadedRule = (org.openmrs.logic.Rule) obj;
 
         try {
+            // register token
             Context.getService(TokenService.class).registerToken(rule, new DssRuleProvider(), classObject.getName());
             loadedRuleMap.put(rule, loadedRule);
         } catch (Exception e) {
