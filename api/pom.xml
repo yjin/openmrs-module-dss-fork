@@ -54,8 +54,6 @@
         <dependency>
             <groupId>org.openmrs.module</groupId>
             <artifactId>logic-api</artifactId>
-            <version>0.5.1</version>
-            <type>jar</type>
         </dependency>
     </dependencies>
 </project>

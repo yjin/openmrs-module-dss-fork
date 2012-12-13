@@ -1,7 +1,6 @@
 package org.openmrs.module.dss.db.hibernate;
 
 import java.util.List;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.SQLQuery;

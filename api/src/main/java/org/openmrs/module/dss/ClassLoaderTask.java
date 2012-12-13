@@ -13,8 +13,8 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.dss.service.DssService;
 import org.openmrs.module.dss.util.IOUtil;
 import org.openmrs.module.dss.util.Util;
-import org.openmrs.scheduler.tasks.AbstractTask;
 import org.openmrs.scheduler.TaskDefinition;
+import org.openmrs.scheduler.tasks.AbstractTask;
 
 /**
  * Checks periodically for classes to load dynamically
@@ -171,7 +171,7 @@ public class ClassLoaderTask extends AbstractTask {
         }
 
         int length = filesInDirectory.length;
-        String currFile = null;
+        String currFile;
 
         log.info("Found " + length + " files with extension " + ext + ". Going to collect them...");
         for (int i = 0; i < length; i++) {

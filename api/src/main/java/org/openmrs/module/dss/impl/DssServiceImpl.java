@@ -78,11 +78,11 @@ public class DssServiceImpl implements DssService {
 
     @Override
     public Result runRule(Patient p, Rule rule) {
+        log.info("Running rule...");
         ArrayList<Rule> ruleList = new ArrayList<Rule>();
         ruleList.add(rule);
 
-        ArrayList<Result> results =
-                this.runRules(p, ruleList);
+        ArrayList<Result> results = this.runRules(p, ruleList);
 
         //Since we ran only one rule, we will only have
         //one result object in the list of returned results
@@ -97,12 +97,16 @@ public class DssServiceImpl implements DssService {
 
     @Override
     public ArrayList<Result> runRules(Patient p, List<Rule> ruleList) {
+        log.info("Running rules...");
         ArrayList<Result> results = new ArrayList<Result>();
         Map<String, Object> parameters;
         String ruleName = null;
+        log.info("Going to get the LogicService...");
         LogicService logicSvc = Context.getLogicService();
+        log.info("Going to instantiate a DssRuleProvider...");
         DssRuleProvider ruleProvider = new DssRuleProvider();
         String threadName = Thread.currentThread().getName();
+        log.info("Thread name is " + threadName);
 
         try {
             for (Rule rule : ruleList) {
@@ -129,6 +133,12 @@ public class DssServiceImpl implements DssService {
                 Result result;
 
                 try {
+                    log.info("Going to evaluate the rule");
+                    String serializedParams = "";
+                    for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+                        serializedParams += entry.getKey() + "=" + entry.getValue() + "; ";
+                    }
+                    log.info("Parameters are: " + serializedParams);
                     result = logicSvc.eval(p.getPatientId(), new LogicCriteriaImpl(ruleName), parameters);
                     results.add(result);
                 } catch (APIAuthenticationException e) {

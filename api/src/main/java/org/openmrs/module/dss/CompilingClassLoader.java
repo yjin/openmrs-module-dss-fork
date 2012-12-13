@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import javax.tools.DiagnosticListener;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
@@ -160,6 +161,7 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
 
             log.info("Going to get the SystemJavaCompiler...");
             JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+
             log.info("Going to get the StandardFileManager...");
             StandardJavaFileManager fileManager = compiler
                     .getStandardFileManager(null, null, null);
@@ -168,13 +170,17 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
             Iterable<? extends JavaFileObject> fileObjects = fileManager
                     .getJavaFileObjects(file);
             StringWriter writer = new StringWriter();
-            log.info("Going to compile...");
-            boolean success = compiler.getTask(writer, fileManager, null,
-                    Arrays.asList(options), null, fileObjects).call();
 
-            if (!success) {
-                this.log.error(writer.toString());
+            log.info("Going to compile...");
+            boolean success = compiler.getTask(writer, fileManager, null, Arrays.asList(options), null, fileObjects).call();
+
+            if (success) {
+                log.info("Success!");
+            } else {
+                log.info("Error :(");
+                log.error(writer.toString());
             }
+
             fileManager.close();
             return success;
         } catch (Exception e) {
@@ -199,23 +205,20 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
                 ModuleFactory.getModuleClassLoaders();
 
         // check module dependencies
-        for (ModuleClassLoader currClassLoader : moduleClassLoaders) {
-            URL[] urls = currClassLoader.getURLs();
+        for (ModuleClassLoader classLoader : moduleClassLoaders) {
+            URL[] urls = classLoader.getURLs();
             for (URL url : urls) {
-                classpathFiles.add(url.getPath().substring(1));
+                classpathFiles.add(url.getPath());
             }
         }
 
         // check current class loader and all its parents
-        ClassLoader currClassLoader = Thread.currentThread()
-                .getContextClassLoader();
-
+        ClassLoader currClassLoader = Thread.currentThread().getContextClassLoader();
         while (currClassLoader != null) {
             if (currClassLoader instanceof URLClassLoader) {
                 URL[] urls = ((URLClassLoader) currClassLoader).getURLs();
 
                 for (URL url : urls) {
-                    // classpathFiles.add(url.getPath().substring(1));
                     classpathFiles.add(url.getPath());
                 }
             }
@@ -286,7 +289,7 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
     @Override
     public Class<?> loadClass(String name) throws ClassNotFoundException {
         log.info("Trying to load class " + name + "...");
-        Class classObject = null;
+        Class classObject;
         try {
             classObject = getParent().loadClass(name);
             if (classObject instanceof Class) {

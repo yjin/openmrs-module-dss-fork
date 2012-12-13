@@ -9,9 +9,7 @@
     <version>@MODULE_VERSION@</version>
     <package>@MODULE_PACKAGE@</package>
     <author>Vibha Anand and Tammy Dugan</author>
-    <description>
-        Dss Module. Run DSS rules.
-    </description>
+    <description>DSS Module. Run DSS rules.</description>
 
     <activator>@MODULE_PACKAGE@.DssActivator</activator>
 	
@@ -19,7 +17,7 @@
 	
     <require_version>1.1.10.2283</require_version>
     <require_modules>
-        <require_module version="0.5">org.openmrs.logic</require_module>
+        <require_module version="0.5.1">org.openmrs.logic</require_module>
         <!--<require_module version="1.0.25">org.openmrs.module.chirdlutil</require_module>-->
         <!--<require_module version="1.1.0">org.openmrs.module.chirdlutilbackports</require_module>-->
     </require_modules>	
