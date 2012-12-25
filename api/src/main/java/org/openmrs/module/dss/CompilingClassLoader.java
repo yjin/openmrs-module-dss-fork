@@ -28,6 +28,7 @@ import org.openmrs.module.dss.util.IOUtil;
 import org.openmrs.module.dss.util.Util;
 import org.openmrs.module.dss.service.DssService;
 import org.openmrs.util.OpenmrsClassLoader;
+import org.openmrs.arden.MlmRule;
 
 /**
  * A CompilingClassLoader compiles your Java source on-the-fly. It checks for
@@ -329,6 +330,7 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
             if (this.javaRuleDirectory != null) {
                 javaFilename = this.javaRuleDirectory;
             }
+            javaFilename += this.rulePackagePrefix.replace('.', '/');
             javaFilename += fileStub + ".java";
             String classFilename = "";
             if (this.classRulesDirectory != null) {
@@ -442,10 +444,10 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
                     // load class filename into rule table
                     try {
                         Object obj = clas.newInstance();
-                        if (obj instanceof DssRule) {
+                        if (obj instanceof MlmRule) {
                             DssService dssService = Context
                                     .getService(DssService.class);
-                            dssService.addRule(classFilename, (DssRule) obj);
+                            dssService.addRule(classFilename, (MlmRule) obj);
                         }
                     } catch (Exception e) {
                         log.error("Error saving rule class file: "

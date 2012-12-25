@@ -8,6 +8,7 @@ import org.openmrs.api.APIException;
 import org.openmrs.logic.result.Result;
 import org.openmrs.module.dss.DssRule;
 import org.openmrs.module.dss.hibernateBeans.Rule;
+import org.openmrs.arden.MlmRule;
 
 /**
  * Defines services used by this module
@@ -57,7 +58,7 @@ public interface DssService
 	 * @return Rule rule that was added to the dss_rule table
 	 * @throws APIException
 	 */
-	public Rule addRule(String classFilename, DssRule rule) throws APIException;
+	public Rule addRule(String classFilename, MlmRule rule) throws APIException;
 
 	/**
 	 * Deletes an existing rule from the dss_rule table based on the ruleId

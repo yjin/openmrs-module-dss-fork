@@ -24,6 +24,7 @@ import org.openmrs.module.dss.DssRuleProvider;
 import org.openmrs.module.dss.db.DssDAO;
 import org.openmrs.module.dss.hibernateBeans.Rule;
 import org.openmrs.module.dss.service.DssService;
+import org.openmrs.arden.MlmRule;
 
 /**
  * Defines implementations of services used by this module
@@ -263,7 +264,7 @@ public class DssServiceImpl implements DssService {
         getDssDAO().deleteRule(ruleId);
     }
 
-    public Rule addRule(String classFilename, DssRule rule) throws APIException {
+    public Rule addRule(String classFilename, MlmRule rule) throws APIException {
         String tokenName = IOUtil.getFilenameWithoutExtension(classFilename);
         Rule databaseRule = getDssDAO().getRule(tokenName);
 
