@@ -29,6 +29,8 @@ public interface DssDAO {
      */
     public Rule getRule(String tokenName);
 
+    public List<Rule> getPrioritizedRules();
+
     public List<Rule> getPrioritizedRules(String type);
 
     public List<Rule> getNonPrioritizedRules(String type);

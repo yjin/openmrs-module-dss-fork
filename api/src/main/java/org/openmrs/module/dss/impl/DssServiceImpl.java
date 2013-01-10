@@ -269,6 +269,11 @@ public class DssServiceImpl implements DssService {
     }
 
     @Override
+    public List<Rule> getPrioritizedRules() throws DAOException {
+        return getDssDAO().getPrioritizedRules();
+    }
+
+    @Override
     public List<Rule> getPrioritizedRules(String type) throws DAOException {
         return getDssDAO().getPrioritizedRules(type);
     }

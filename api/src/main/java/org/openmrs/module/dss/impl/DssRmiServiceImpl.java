@@ -63,6 +63,7 @@ public class DssRmiServiceImpl implements DssRmiService {
      * org.openmrs.module.dss.service.DssRmiService#getPatient(java.lang.String,
      * java.lang.String, java.lang.String)
      */
+    @Override
     public Patient getPatient(String username, String password, String mrn) throws RemoteException {
         Context.openSession();
         try {
@@ -98,12 +99,15 @@ public class DssRmiServiceImpl implements DssRmiService {
             }
 
             return null;
+
         } catch (ContextAuthenticationException e) {
             log.error("Unauthorized access attempted on web service method: getPatient", e);
             throw new RemoteException("Unauthorized access attempted on web service method: getPatient", e);
+
         } catch (Throwable e) {
             log.error("Error retrieving patient", e);
             throw new RemoteException("Error retrieving patient", e);
+
         } finally {
             Context.closeSession();
         }
@@ -112,6 +116,7 @@ public class DssRmiServiceImpl implements DssRmiService {
     /**
      * @see org.openmrs.module.dss.service.DssRmiService#testConnection()
      */
+    @Override
     public boolean testConnection() throws RemoteException {
         return true;
     }
@@ -121,6 +126,7 @@ public class DssRmiServiceImpl implements DssRmiService {
      * org.openmrs.module.dss.service.DssRmiService#getEncounters(java.lang.String,
      * java.lang.String, org.openmrs.Patient, java.util.Date, java.util.Date)
      */
+    @Override
     public List<Encounter> getEncounters(String username, String password, Patient patient, Date fromDate, Date toDate)
             throws RemoteException {
         Context.openSession();
@@ -151,6 +157,7 @@ public class DssRmiServiceImpl implements DssRmiService {
      * java.lang.String, org.openmrs.Patient, java.lang.String,
      * java.lang.Integer, java.lang.String)
      */
+    @Override
     public Result runRule(String username, String password, Patient patient, String ruleName, Integer encounterId,
             String locationName) throws RemoteException {
         Context.openSession();
@@ -190,6 +197,7 @@ public class DssRmiServiceImpl implements DssRmiService {
      * org.openmrs.module.dss.service.DssRmiService#getRules(java.lang.String,
      * java.lang.String, java.lang.String)
      */
+    @Override
     public List<Rule> getRules(String username, String password, String ruleNameLike) throws RemoteException {
         Context.openSession();
         List<Rule> rules = new ArrayList<Rule>();
@@ -238,6 +246,7 @@ public class DssRmiServiceImpl implements DssRmiService {
      * org.openmrs.module.dss.service.DssRmiService#getPhysicianNote(java.lang.String,
      * java.lang.String, org.openmrs.Patient)
      */
+    @Override
     public String getPhysicianNote(String username, String password, Patient patient) throws RemoteException {
         Context.openSession();
         try {

@@ -12,7 +12,6 @@ import org.openmrs.module.dss.hibernateBeans.Rule;
  * Defines services used by this module
  *
  * @author Tammy Dugan
- *
  */
 public interface DssService {
 
@@ -71,8 +70,25 @@ public interface DssService {
      */
     public void deleteRule(int ruleId);
 
+    /**
+     * Returns a list of rules from the dss_rule table
+     *
+     * @return List<Rule>
+     */
+    public List<Rule> getPrioritizedRules();
+
+    /**
+     * Returns a list of rules from the dss_rule table
+     *
+     * @return List<Rule>
+     */
     public List<Rule> getPrioritizedRules(String type);
 
+    /**
+     * Returns a list of rules from the dss_rule table
+     *
+     * @return List<Rule>
+     */
     public List<Rule> getNonPrioritizedRules(String type);
 
     /**
