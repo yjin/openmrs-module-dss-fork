@@ -42,9 +42,21 @@ public class RuleTesterController extends SimpleFormController {
         Map<String, Object> map = new HashMap<String, Object>();
         DssService dssService = Context
                 .getService(DssService.class);
-
+     
+        String mode = request.getParameter("mode");
+        if(mode == null){
+            mode = "PRODUCE";
+        }
+        map.put("mode", mode);
+        
+        String drug_order = request.getParameter("drugOrder");
+        if(drug_order == null) {
+            drug_order = "false";
+        }
+        
         String ruleName = request.getParameter("ruleName");
         String mrn = request.getParameter("mrn");
+ //       Integer encounterId = Integer.parseInt(request.getParameter("encounterId"));
 
         HashMap<String, Object> parameters = new HashMap<String, Object>();
         // default mode
@@ -73,6 +85,8 @@ public class RuleTesterController extends SimpleFormController {
                     map.put("patient", "NULL");
                 }
                 if (patient != null) {
+                    parameters.put("drug_order", drug_order);
+//                   parameters.put("encounterId", encounterId);
                     Rule rule = new Rule();
                     rule.setTokenName(ruleName);
                     List<Rule> rules = dssService.getRules(rule, false, false,

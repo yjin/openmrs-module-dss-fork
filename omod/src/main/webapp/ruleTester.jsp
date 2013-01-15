@@ -7,20 +7,28 @@
     Please choose a rule to test:
 </p>
 <form name="input" action="ruleTester.form" method="get">
-    <select name="ruleName">
-        <c:forEach items="${rules}" var="rule">
-            <option value="${rule.tokenName}"
-                    <c:if test="${rule.tokenName==lastRuleName}">
-                        selected
-                    </c:if>
-                    >${rule.tokenName}</option>
-        </c:forEach>
-    </select>
-    <p>
-        Please enter the patient's mrn:
-    </p>
-    <input type="text" name="mrn" value="${lastMRN}"/>
-    <input type="submit" value="Test Rule">
+<select name="ruleName">
+<c:forEach items="${rules}" var="rule">
+<option value="${rule.tokenName}"
+<c:if test="${rule.tokenName==lastRuleName}">
+selected
+</c:if>
+>${rule.tokenName}</option>
+</c:forEach>
+</select>
+<p>
+Please enter the patient's mrn:
+</p>
+<input type="text" name="mrn" value="${lastMRN}"/>
+<p>
+Please enter the mode:
+</p>
+<input type="text" name="mode" value="${mode}"/>
+<p>
+Please enter true or false:
+</p>
+<input type="text" name="drug_order" value="${drugOrder}"/>
+<input type="submit" value="Test Rule">
 </form>
 <p>
     Result from running <b>${lastRuleName}</b> was:
