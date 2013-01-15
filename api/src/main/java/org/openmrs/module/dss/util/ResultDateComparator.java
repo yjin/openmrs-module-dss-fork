@@ -21,6 +21,7 @@ import org.openmrs.logic.result.Result;
  */
 public class ResultDateComparator implements Comparator<Result> {
 
+    @Override
     public int compare(Result o1, Result o2) {
         return o1.getResultDate().compareTo(o2.getResultDate());
     }

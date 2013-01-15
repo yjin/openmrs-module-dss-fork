@@ -1,8 +1,12 @@
 package org.openmrs.module.dss.web;
 
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -39,12 +43,22 @@ public class RuleTesterController extends SimpleFormController {
         DssService dssService = Context
                 .getService(DssService.class);
 
-        String mode = "PRODUCE";
-
         String ruleName = request.getParameter("ruleName");
         String mrn = request.getParameter("mrn");
 
+        HashMap<String, Object> parameters = new HashMap<String, Object>();
+        // default mode
+        parameters.put("mode", "PRODUCE");
+
+        Set<String> keys = request.getParameterMap().keySet();
+        for (String key : keys) {
+            parameters.put(key, (String) request.getParameter(key));
+        }
+
+        map.put("ruleName", ruleName);
+        map.put("mrn", mrn);
         map.put("lastMRN", mrn);
+        map.put("progress", 0);
 
         if (mrn != null) {
             try {
@@ -54,27 +68,44 @@ public class RuleTesterController extends SimpleFormController {
                 Patient patient = null;
                 if (patients != null && patients.size() > 0) {
                     patient = patients.get(0);
+                    map.put("patient", patient);
+                } else {
+                    map.put("patient", "NULL");
                 }
                 if (patient != null) {
-                    HashMap<String, Object> parameters = new HashMap<String, Object>();
-                    parameters.put("mode", mode);
                     Rule rule = new Rule();
                     rule.setTokenName(ruleName);
                     List<Rule> rules = dssService.getRules(rule, false, false,
                             null);
                     Rule currRule = null;
+                    map.put("numberOfRules", rules.size());
                     if (rules.size() > 0) {
                         currRule = rules.get(0);
                     }
+                    map.put("ruleToEvaluate", currRule);
+                    map.put("ageRestriction", currRule.checkAgeRestrictions(patient));
 
+                    map.put("progress", 1);
                     if (currRule != null
                             && currRule.checkAgeRestrictions(patient)) {
+                        map.put("progress", 2);
                         currRule.setParameters(parameters);
                         Result result = dssService.runRule(patient, currRule);
+                        // result.add(new Result("DIEGO"));
+                        map.put("progress", 3);
 
+                        if (result == null) {
+                            map.put("resultIsNull", true);
+                        } else {
+                            map.put("resultIsNull", false);
+                        }
+
+                        map.put("progress", 4);
                         if (result.size() < 2) {
+                            map.put("resultSize", result.size());
                             map.put("runResult", result.toString());
                         } else {
+                            map.put("resultSize", result.size());
                             String resultString = "";
                             for (Result currResult : result) {
                                 resultString += currResult.toString();
@@ -98,6 +129,7 @@ public class RuleTesterController extends SimpleFormController {
                 "tokenName");
 
         map.put("rules", rules);
+        map.put("debug", "diego");
 
         return map;
     }

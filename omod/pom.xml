@@ -43,6 +43,10 @@
             <artifactId>openmrs-test</artifactId>
             <type>pom</type>
         </dependency>
+        <dependency>
+            <groupId>org.openmrs.module</groupId>
+            <artifactId>logic-api</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

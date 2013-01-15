@@ -13,8 +13,8 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.dss.service.DssService;
 import org.openmrs.module.dss.util.IOUtil;
 import org.openmrs.module.dss.util.Util;
-import org.openmrs.scheduler.tasks.AbstractTask;
 import org.openmrs.scheduler.TaskDefinition;
+import org.openmrs.scheduler.tasks.AbstractTask;
 
 /**
  * Checks periodically for classes to load dynamically
@@ -34,30 +34,43 @@ public class ClassLoaderTask extends AbstractTask {
      * Assigns locations of directories to look for files to compile/transform
      */
     public ClassLoaderTask() {
+        log.info(this.getClass().getCanonicalName() + " is starting...");
+
         AdministrationService adminService = Context.getAdministrationService();
+
+        // directory where the service can find the Java files
         String property = adminService.getGlobalProperty("dss.javaRuleDirectory");
         if (property == null) {
             log.error("You must set the global property dss.javaRuleDirectory");
         }
         this.javaRuleDirectory = IOUtil.formatDirectoryName(property);
 
+        // directory where the service can find the MLM files
         property = adminService.getGlobalProperty("dss.mlmRuleDirectory");
         if (property == null) {
             log.error("You must set the global property dss.mlmRuleDirectory");
         }
         this.mlmRuleDirectory = IOUtil.formatDirectoryName(property);
 
+        // directory where the classes will be located after compilation
         property = adminService.getGlobalProperty("dss.classRuleDirectory");
         if (property == null) {
             log.error("You must set the global property dss.classRuleDirectory");
         }
         this.classRulesDirectory = IOUtil.formatDirectoryName(property);
 
+        // prefix for the DSS rule package
         property = adminService.getGlobalProperty("dss.rulePackagePrefix");
         if (property == null) {
             log.error("You must set the global property dss.rulePackagePrefix");
         }
         this.rulePackagePrefix = Util.formatPackagePrefix(property);
+
+        log.info(ClassLoaderTask.class.getName() + " parameters: "
+                + " javaRuleDirectory=" + javaRuleDirectory
+                + " mlmRuleDirectory=" + mlmRuleDirectory
+                + " classRulesDirectory=" + classRulesDirectory
+                + " rulePackagePrefix=" + rulePackagePrefix);
     }
 
     @Override
@@ -85,13 +98,15 @@ public class ClassLoaderTask extends AbstractTask {
      * Looks for mlm and java files to load as rule tokens
      */
     public void lookForNewClasses() {
+        log.info("Looking for new classess...");
+
         HashSet<String> rules = new HashSet<String>();
         DssService dssService = Context.getService(DssService.class);
 
-        //look for mlm file rule tokens
+        // look for mlm file rule tokens
         HashMap<String, File> mlmFileMap = this.lookForRules(this.mlmRuleDirectory, ".mlm");
 
-        //look for java file rule tokens
+        // look for java file rule tokens
         HashMap<String, File> javaFileMap = this.lookForRules(this.javaRuleDirectory, ".java");
 
         String classDirectory = "";
@@ -102,7 +117,7 @@ public class ClassLoaderTask extends AbstractTask {
             classDirectory += this.rulePackagePrefix.replace('.', '/');
         }
 
-        //look for java class file rule tokens
+        // look for java class file rule tokens
         HashMap<String, File> javaClassFileMap = this.lookForRules(classDirectory, ".class");
 
         // Check java rules against java class first
@@ -131,7 +146,7 @@ public class ClassLoaderTask extends AbstractTask {
             }
         }
 
-        //load rule tokens into LogicService
+        // load rule tokens into LogicService
         for (String ruleName : rules) {
             try {
                 dssService.loadRule(ruleName, true);
@@ -145,17 +160,20 @@ public class ClassLoaderTask extends AbstractTask {
     }
 
     private HashMap<String, File> lookForRules(String directoryName, String ext) {
+        log.info("Looking for rules with extension " + ext + " in directory " + directoryName);
         HashMap<String, File> files = new HashMap<String, File>();
         String[] fileExtensions = new String[]{ext};
 
         File[] filesInDirectory = IOUtil.getFilesInDirectory(directoryName, fileExtensions);
         if (filesInDirectory == null) {
+            log.info("No files found.");
             return files;
         }
 
         int length = filesInDirectory.length;
-        String currFile = null;
+        String currFile;
 
+        log.info("Found " + length + " files with extension " + ext + ". Going to collect them...");
         for (int i = 0; i < length; i++) {
             File file = filesInDirectory[i];
             currFile = IOUtil.getFilenameWithoutExtension(file.getPath());
@@ -164,6 +182,7 @@ public class ClassLoaderTask extends AbstractTask {
             }
         }
 
+        log.info("Collected " + files.size() + " files with extension " + ext);
         return files;
     }
 }

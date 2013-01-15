@@ -12,25 +12,23 @@ import org.openmrs.api.APIException;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.db.DAOException;
+import org.openmrs.arden.MlmRule;
 import org.openmrs.logic.LogicService;
 import org.openmrs.logic.impl.LogicCriteriaImpl;
 import org.openmrs.logic.result.Result;
 import org.openmrs.logic.token.TokenService;
-import org.openmrs.module.dss.util.IOUtil;
-import org.openmrs.module.dss.util.Util;
 import org.openmrs.module.dss.CompilingClassLoader;
-import org.openmrs.module.dss.DssRule;
 import org.openmrs.module.dss.DssRuleProvider;
 import org.openmrs.module.dss.db.DssDAO;
 import org.openmrs.module.dss.hibernateBeans.Rule;
 import org.openmrs.module.dss.service.DssService;
-import org.openmrs.arden.MlmRule;
+import org.openmrs.module.dss.util.IOUtil;
+import org.openmrs.module.dss.util.Util;
 
 /**
  * Defines implementations of services used by this module
  *
  * @author Tammy Dugan
- *
  */
 public class DssServiceImpl implements DssService {
 
@@ -61,11 +59,12 @@ public class DssServiceImpl implements DssService {
         this.dao = dao;
     }
 
+    @Override
     public String runRulesAsString(Patient p, List<Rule> ruleList) {
         ArrayList<Result> results = this.runRules(p, ruleList);
         String reply = "";
 
-        if (results == null || results.size() == 0) {
+        if (results == null || results.isEmpty()) {
             return "No rules run!!!!";
         }
 
@@ -77,12 +76,13 @@ public class DssServiceImpl implements DssService {
         return reply;
     }
 
+    @Override
     public Result runRule(Patient p, Rule rule) {
+        log.info("Running rule...");
         ArrayList<Rule> ruleList = new ArrayList<Rule>();
         ruleList.add(rule);
 
-        ArrayList<Result> results =
-                this.runRules(p, ruleList);
+        ArrayList<Result> results = this.runRules(p, ruleList);
 
         //Since we ran only one rule, we will only have
         //one result object in the list of returned results
@@ -95,11 +95,17 @@ public class DssServiceImpl implements DssService {
         return Result.emptyResult();
     }
 
+    @Override
     public ArrayList<Result> runRules(Patient p, List<Rule> ruleList) {
+        log.info("Running rules...");
         ArrayList<Result> results = new ArrayList<Result>();
-        Map<String, Object> parameters = null;
+        Map<String, Object> parameters;
         String ruleName = null;
+
+        log.info("Going to get the LogicService...");
         LogicService logicSvc = Context.getLogicService();
+
+        log.info("Going to instantiate a DssRuleProvider...");
         DssRuleProvider ruleProvider = new DssRuleProvider();
         String threadName = Thread.currentThread().getName();
 
@@ -126,10 +132,16 @@ public class DssServiceImpl implements DssService {
 
                 long startTime = System.currentTimeMillis();
                 Result result;
+
                 try {
+                    log.info("Going to evaluate the rule");
+                    String serializedParams = "";
+                    for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+                        serializedParams += entry.getKey() + "=" + entry.getValue() + "; ";
+                    }
+                    log.info("Parameters are: " + serializedParams);
                     result = logicSvc.eval(p.getPatientId(), new LogicCriteriaImpl(ruleName), parameters);
                     results.add(result);
-
                 } catch (APIAuthenticationException e) {
                     //ignore a privilege exception
                 } catch (Exception e) {
@@ -146,7 +158,6 @@ public class DssServiceImpl implements DssService {
                     System.out.println("logicSvc.eval time(" + ruleName + ", " + threadName + "): " + elapsedTime);
                 }
             }
-
             return results;
 
         } catch (Exception e) {
@@ -157,48 +168,53 @@ public class DssServiceImpl implements DssService {
         }
     }
 
+    @Override
     public org.openmrs.logic.Rule loadRule(String rule, boolean updateRule) throws Exception {
+        log.info("Going to load rule '" + rule + "' from HashMap...");
         org.openmrs.logic.Rule loadedRule = loadedRuleMap.get(rule);
+
         if (loadedRule != null && !updateRule) {
-            // The rule has already been loaded, and an update is not needed.
+            // the rule has already been loaded, and an update is not needed.
+            log.info("Rule '" + rule + "' found in HashMap. Not forcing update.");
             return loadedRule;
         }
 
         // Create a CompilingClassLoader
+        log.info("Creating a " + CompilingClassLoader.class.getName() + "...");
         CompilingClassLoader ccl = CompilingClassLoader.getInstance();
 
         AdministrationService adminService = Context.getAdministrationService();
         String rulePackagePrefix = Util.formatPackagePrefix(adminService
                 .getGlobalProperty("dss.rulePackagePrefix"));
 
-        Class<?> clas = null;
+        Class<?> classObject = null;
 
         // try to load the class dynamically
         if (!rule.contains(rulePackagePrefix)) {
             try {
-                clas = ccl.loadClass(rulePackagePrefix + rule);
+                classObject = ccl.loadClass(rulePackagePrefix + rule);
             } catch (Exception e) {
-                //ignore this exception
+                // ignore this exception
             }
         } else {
             try {
-                clas = ccl.loadClass(rule);
+                classObject = ccl.loadClass(rule);
             } catch (Exception e) {
-                //ignore this exception
+                // ignore this exception
             }
         }
 
         // try to load the class from the class library
-        if (clas == null) {
+        if (classObject == null) {
             String defaultPackagePrefixProp = adminService.getGlobalProperty("dss.defaultPackagePrefix");
             List<String> defaultPackagePrefixes = Util.formatPackagePrefixes(defaultPackagePrefixProp, ",");
             if (defaultPackagePrefixes.size() > 0) {
                 int cnt = 0;
-                while ((clas == null) && (cnt < defaultPackagePrefixes.size())) {
+                while ((classObject == null) && (cnt < defaultPackagePrefixes.size())) {
                     String defaultPackagePrefix = defaultPackagePrefixes.get(cnt++);
                     if (!rule.contains(defaultPackagePrefix)) {
                         try {
-                            clas = ccl.loadClass(defaultPackagePrefix + rule);
+                            classObject = ccl.loadClass(defaultPackagePrefix + rule);
                         } catch (Exception e) {
                             //ignore this exception
                         }
@@ -208,21 +224,23 @@ public class DssServiceImpl implements DssService {
         }
 
         // try to load the class as it is
-        if (clas == null) {
+        if (classObject == null) {
             try {
-                clas = ccl.loadClass(rule);
+                classObject = ccl.loadClass(rule);
             } catch (Exception e) {
                 //ignore this exception
             }
         }
 
-        if (clas == null) {
+        if (classObject == null) {
+            log.info("Class was not found.");
             throw new Exception("Could not load class for rule: " + rule);
         }
 
         Object obj = null;
+
         try {
-            obj = clas.newInstance();
+            obj = classObject.newInstance();
         } catch (Exception e) {
             log.error("", e);
         }
@@ -235,7 +253,8 @@ public class DssServiceImpl implements DssService {
         loadedRule = (org.openmrs.logic.Rule) obj;
 
         try {
-            Context.getService(TokenService.class).registerToken(rule, new DssRuleProvider(), clas.getName());
+            // register token
+            Context.getService(TokenService.class).registerToken(rule, new DssRuleProvider(), classObject.getName());
             loadedRuleMap.put(rule, loadedRule);
         } catch (Exception e) {
             log.error("", e);
@@ -244,26 +263,37 @@ public class DssServiceImpl implements DssService {
         return loadedRule;
     }
 
+    @Override
     public Rule getRule(int ruleId) throws APIException {
         return getDssDAO().getRule(ruleId);
     }
 
+    @Override
+    public List<Rule> getPrioritizedRules() throws DAOException {
+        return getDssDAO().getPrioritizedRules();
+    }
+
+    @Override
     public List<Rule> getPrioritizedRules(String type) throws DAOException {
         return getDssDAO().getPrioritizedRules(type);
     }
 
+    @Override
     public List<Rule> getNonPrioritizedRules(String type) throws DAOException {
         return getDssDAO().getNonPrioritizedRules(type);
     }
 
+    @Override
     public List<Rule> getRules(Rule rule, boolean ignoreCase, boolean enableLike, String sortColumn) {
         return getDssDAO().getRules(rule, ignoreCase, enableLike, sortColumn);
     }
 
+    @Override
     public void deleteRule(int ruleId) {
         getDssDAO().deleteRule(ruleId);
     }
 
+    @Override
     public Rule addRule(String classFilename, MlmRule rule) throws APIException {
         String tokenName = IOUtil.getFilenameWithoutExtension(classFilename);
         Rule databaseRule = getDssDAO().getRule(tokenName);

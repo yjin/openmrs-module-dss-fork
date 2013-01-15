@@ -13,8 +13,9 @@ import org.openmrs.logic.result.Result;
 import org.openmrs.module.dss.hibernateBeans.Rule;
 import org.openmrs.module.dss.service.DssService;
 import org.springframework.web.servlet.mvc.SimpleFormController;
+import org.openmrs.module.dss.CompilingClassLoader;
 
-public class RunRulesController extends SimpleFormController {
+public class AddRulesController extends SimpleFormController {
 
     /**
      * Logger for this class and subclasses
@@ -35,10 +36,16 @@ public class RunRulesController extends SimpleFormController {
         Map<String, Object> map = new HashMap<String, Object>();
 
         String patientIdString = request.getParameter("patientId");
+        String mlmRuleSource = request.getParameter("mlmRule");
 
-        Map<String, Object> params = request.getParameterMap();
+        if (mlmRuleSource == null) {
+            mlmRuleSource = "";
+        } else {
+            // Context.getAdministrationService().getGlobalProperty("dss.java");
+            Context.getArdenService().compile(mlmRuleSource, "/Users/diego/.OpenMRS/dss/test.java");
+        }
 
-        params.put("mode", "CONSUME");
+        // parse the thing
 
         if (patientIdString == null) {
             patientIdString = "";
@@ -53,7 +60,6 @@ public class RunRulesController extends SimpleFormController {
             ArrayList<Rule> ruleList = new ArrayList<Rule>();
 
             for (Rule currRule : rules) {
-                currRule.setParameters(params);
                 ruleList.add(currRule);
             }
 
@@ -71,6 +77,7 @@ public class RunRulesController extends SimpleFormController {
             }
 
             map.put("rules", rules);
+            map.put("mlmRuleSource", mlmRuleSource);
             map.put("numRules", rules.size());
         }
 

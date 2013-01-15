@@ -1,6 +1,3 @@
-/**
- *
- */
 package org.openmrs.module.dss.util;
 
 import java.io.ByteArrayOutputStream;
@@ -482,13 +479,13 @@ public class Util {
 
     public static String computeMD5(String strToMD5) throws DigestException {
         try {
-            //get md5 of input string
+            // get md5 of input string
             MessageDigest md = MessageDigest.getInstance("MD5");
             md.reset();
             md.update(strToMD5.getBytes());
             byte[] bytes = md.digest();
 
-            //convert md5 bytes to a hex string
+            // convert md5 bytes to a hex string
             StringBuffer hexString = new StringBuffer();
             for (int i = 0; i < bytes.length; i++) {
                 hexString.append(Integer.toHexString(0xFF & bytes[i]));

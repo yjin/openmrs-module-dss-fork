@@ -22,11 +22,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.context.Context;
+import org.openmrs.arden.MlmRule;
 import org.openmrs.module.ModuleClassLoader;
 import org.openmrs.module.ModuleFactory;
+import org.openmrs.module.dss.service.DssService;
 import org.openmrs.module.dss.util.IOUtil;
 import org.openmrs.module.dss.util.Util;
-import org.openmrs.module.dss.service.DssService;
 import org.openmrs.util.OpenmrsClassLoader;
 import org.openmrs.arden.MlmRule;
 
@@ -139,27 +140,47 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
 
         String classpath = getClasspath();
 
+        log.info("CLASSPATH is " + classpath);
+
         try {
             if (this.classRulesDirectory == null) {
+                log.error("Global property dss.classRuleDirectory must be set.");
                 throw new Exception("Global property dss.classRuleDirectory must be set.");
             }
             String[] options = new String[]{"-classpath", classpath, "-d", this.classRulesDirectory};
+            log.info("Options are {" + options[0] + "," + options[1] + "," + options[2] + "," + options[3] + "}");
 
+            log.info("Going to load file: " + javaFile);
             File file = new File(javaFile);
 
+            if (file == null) {
+                log.error("File is NULL!");
+            } else {
+                log.info("File loaded.");
+            }
+
+            log.info("Going to get the SystemJavaCompiler...");
             JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+
+            log.info("Going to get the StandardFileManager...");
             StandardJavaFileManager fileManager = compiler
                     .getStandardFileManager(null, null, null);
 
+            log.info("Going to get the JavaFileObjects...");
             Iterable<? extends JavaFileObject> fileObjects = fileManager
                     .getJavaFileObjects(file);
             StringWriter writer = new StringWriter();
-            boolean success = compiler.getTask(writer, fileManager, null,
-                    Arrays.asList(options), null, fileObjects).call();
 
-            if (!success) {
-                this.log.error(writer.toString());
+            log.info("Going to compile...");
+            boolean success = compiler.getTask(writer, fileManager, null, Arrays.asList(options), null, fileObjects).call();
+
+            if (success) {
+                log.info("Success!");
+            } else {
+                log.info("Error :(");
+                log.error(writer.toString());
             }
+
             fileManager.close();
             return success;
         } catch (Exception e) {
@@ -176,30 +197,29 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
      * @return String classpath
      */
     public String getClasspath() {
+        log.info("Going to build classpath...");
         String classpath = "";
         HashSet<String> classpathFiles = new HashSet<String>();
 
         Collection<ModuleClassLoader> moduleClassLoaders =
                 ModuleFactory.getModuleClassLoaders();
 
-        //check module dependencies
-        for (ModuleClassLoader currClassLoader : moduleClassLoaders) {
-            URL[] urls = currClassLoader.getURLs();
+        // check module dependencies
+        for (ModuleClassLoader classLoader : moduleClassLoaders) {
+            URL[] urls = classLoader.getURLs();
             for (URL url : urls) {
-                classpathFiles.add(url.getPath().substring(1));
+                classpathFiles.add(url.getPath());
             }
         }
 
         // check current class loader and all its parents
-        ClassLoader currClassLoader = Thread.currentThread()
-                .getContextClassLoader();
-
+        ClassLoader currClassLoader = Thread.currentThread().getContextClassLoader();
         while (currClassLoader != null) {
             if (currClassLoader instanceof URLClassLoader) {
                 URL[] urls = ((URLClassLoader) currClassLoader).getURLs();
 
                 for (URL url : urls) {
-                    classpathFiles.add(url.getPath().substring(1));
+                    classpathFiles.add(url.getPath());
                 }
             }
             currClassLoader = currClassLoader.getParent();
@@ -268,19 +288,38 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
      */
     @Override
     public Class<?> loadClass(String name) throws ClassNotFoundException {
+        log.info("Trying to load class " + name + "...");
+        Class classObject;
         try {
-            return getParent().loadClass(name);
+            classObject = getParent().loadClass(name);
+            if (classObject instanceof Class) {
+                log.info("Class found!");
+            }
+            return classObject;
         } catch (Exception e) {
+            log.info("Class not found: " + e.getMessage());
         }
+
         Collection<ModuleClassLoader> classLoaders = ModuleFactory.getModuleClassLoaders();
 
         for (ModuleClassLoader classLoader : classLoaders) {
             try {
-                return classLoader.loadClass(name);
+                classObject = classLoader.loadClass(name);
+                if (classObject instanceof Class) {
+                    log.info("Class found!");
+                }
+                return classObject;
             } catch (Exception e) {
+                log.info("Class not found: " + e.getMessage());
             }
         }
-        return findClass(name);
+        classObject = findClass(name);
+        if (classObject instanceof Class) {
+            log.info("Class found!");
+        } else {
+            log.info("Class not found.");
+        }
+        return classObject;
     }
 
     private Class defineDynamicClass(String name, byte raw[]) {
@@ -294,23 +333,25 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
     // The heart of the ClassLoader -- automatically compile
     // source as necessary when looking for class files
     @Override
-    public Class findClass(String name)
-            throws ClassNotFoundException {
+    public Class findClass(String name) throws ClassNotFoundException {
+
         boolean compiledNewClassfile = false;
         boolean updateRuleTable = false;
-        Class clas = null;
+        Class classObject = null;
+
         // Our goal is to get a Class object
-        //only check super classloader for non-dynamic rules
+        // only check super classloader for non-dynamic rules
         if (this.rulePackagePrefix == null
                 || (this.rulePackagePrefix != null && !name.startsWith(this.rulePackagePrefix))) {
-
             try {
+                log.info("Trying with URLClassLoader...");
                 return super.findClass(name);
             } catch (Exception e) {
+                log.info("Class not found: " + e.getMessage());
             }
         }
-        //if the class is not found, look in rule directory
-        if (clas == null) {
+        // if the class is not found, look in rule directory
+        if (classObject == null) {
             // Create a pathname from the class name
             // E.g. java.lang.Object => java/lang/Object
             String fileStub = name;
@@ -424,26 +465,26 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
                 //otherwise find the loaded class
                 if (!compiledNewClassfile) {
                     try {
-                        clas = findLoadedClass(name);
-                        if (clas == null) {
-                            clas = getInstance().classMap.get(name);
+                        classObject = findLoadedClass(name);
+                        if (classObject == null) {
+                            classObject = getInstance().classMap.get(name);
                         }
                     } catch (Exception e) {
                     }
                 }
-                if (compiledNewClassfile || clas == null) {
+                if (compiledNewClassfile || classObject == null) {
                     // read the bytes
                     byte raw[] = getBytes(classFilename);
                     // try to turn them into a class
                     CompilingClassLoader compilingClassLoader = new CompilingClassLoader(this);
-                    clas = compilingClassLoader.defineDynamicClass(name, raw);
-                    getInstance().classMap.put(name, clas);
+                    classObject = compilingClassLoader.defineDynamicClass(name, raw);
+                    getInstance().classMap.put(name, classObject);
                 }
 
                 if (updateRuleTable) {
                     // load class filename into rule table
                     try {
-                        Object obj = clas.newInstance();
+                        Object obj = classObject.newInstance();
                         if (obj instanceof MlmRule) {
                             DssService dssService = Context
                                     .getService(DssService.class);
@@ -463,6 +504,6 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
                 //load precompiled rules from the dynamic directory
             }
         }
-        return clas;
+        return classObject;
     }
 }
