@@ -31,9 +31,8 @@ import org.openmrs.module.dss.util.Util;
 import org.openmrs.util.OpenmrsClassLoader;
 
 /**
- * A CompilingClassLoader compiles your Java source on-the-fly. It checks for
- * nonexistent .class files, or .class files that are older than their
- * corresponding source code.
+ * A CompilingClassLoader compiles your Java source on-the-fly. It checks for nonexistent .class files, or .class files
+ * that are older than their corresponding source code.
  *
  * @Author - Vibha Anand - Adapted from ibm.com/developerWorks
  */
@@ -51,10 +50,8 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
     private Map<String, Class<?>> classMap = Collections.synchronizedMap(new HashMap<String, Class<?>>());
 
     /**
-     * Private class to hold the one classloader used throughout openmrs. This
-     * is an alternative to storing the instance object on
-     * {@link CompilingClassLoader} itself so that garbage collection can happen
-     * correctly.
+     * Private class to hold the one classloader used throughout openmrs. This is an alternative to storing the instance
+     * object on {@link CompilingClassLoader} itself so that garbage collection can happen correctly.
      */
     private static class CompilingClassLoaderHolder {
 
@@ -139,7 +136,7 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
 
         String classpath = getClasspath();
 
-        log.info("CLASSPATH is " + classpath);
+        log.debug("CLASSPATH is " + classpath);
 
         try {
             if (this.classRulesDirectory == null) {
@@ -147,9 +144,9 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
                 throw new Exception("Global property dss.classRuleDirectory must be set.");
             }
             String[] options = new String[]{"-classpath", classpath, "-d", this.classRulesDirectory};
-            log.info("Options are {" + options[0] + "," + options[1] + "," + options[2] + "," + options[3] + "}");
+            log.debug("Options are {" + options[0] + "," + options[1] + "," + options[2] + "," + options[3] + "}");
 
-            log.info("Going to load file: " + javaFile);
+            log.debug("Going to load file: " + javaFile);
             File file = new File(javaFile);
 
             if (file == null) {
@@ -158,14 +155,14 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
                 log.info("File loaded.");
             }
 
-            log.info("Going to get the SystemJavaCompiler...");
+            log.debug("Going to get the SystemJavaCompiler...");
             JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 
-            log.info("Going to get the StandardFileManager...");
+            log.debug("Going to get the StandardFileManager...");
             StandardJavaFileManager fileManager = compiler
                     .getStandardFileManager(null, null, null);
 
-            log.info("Going to get the JavaFileObjects...");
+            log.debug("Going to get the JavaFileObjects...");
             Iterable<? extends JavaFileObject> fileObjects = fileManager
                     .getJavaFileObjects(file);
             StringWriter writer = new StringWriter();
@@ -196,8 +193,7 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
      * @return String classpath
      */
     public String getClasspath() {
-        log.info("Going to build classpath...");
-        String classpath = "";
+        log.debug("Going to build CLASSPATH...");
         HashSet<String> classpathFiles = new HashSet<String>();
 
         Collection<ModuleClassLoader> moduleClassLoaders =
@@ -224,27 +220,29 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
             currClassLoader = currClassLoader.getParent();
         }
 
+        // build CLASSPATH
         Iterator<String> classpathEntries = classpathFiles.iterator();
-
+        StringBuilder classpathBuilder = new StringBuilder();
         while (classpathEntries.hasNext()) {
-            if (classpath.length() > 0) {
-                classpath += ";";
+            if (classpathBuilder.length() > 0) {
+                classpathBuilder.append(java.io.File.pathSeparator);
             }
-            classpath += classpathEntries.next();
+            classpathBuilder.append(classpathEntries.next());
         }
 
-        classpath = classpath.replaceAll("%20", " ");
+        String classpath = classpathBuilder.toString().replaceAll("%20", " ");
+        log.debug("CLASSPATH is " + classpath);
 
+        // return CLASSPATH
         return classpath;
     }
 
     /**
-     * Parse the mlm file to java source code file specified in the 'mlmFile'
-     * parameter. Return a true if the parsing worked, false otherwise.
+     * Parse the mlm file to java source code file specified in the 'mlmFile' parameter. Return a true if the parsing
+     * worked, false otherwise.
      *
      * @param mlmFile path to mlm file to convert to java file
-     * @return boolean true if the mlm file was successfully converted to a java
-     * file
+     * @return boolean true if the mlm file was successfully converted to a java file
      */
     public boolean parse(String mlmFile) {
         // Let the user know what's going on
@@ -269,8 +267,7 @@ public class CompilingClassLoader extends OpenmrsClassLoader {
     }
 
     /**
-     * @see org.openmrs.util.OpenmrsClassLoader#loadClass(java.lang.String,
-     * boolean)
+     * @see org.openmrs.util.OpenmrsClassLoader#loadClass(java.lang.String, boolean)
      */
     @Override
     public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
