@@ -1,6 +1,9 @@
 package org.openmrs.module.dss.db;
 
 import java.util.List;
+import java.util.Set;
+import org.openmrs.Concept;
+import org.openmrs.Encounter;
 import org.openmrs.module.dss.hibernateBeans.Rule;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,8 +26,7 @@ public interface DssDAO {
     /**
      * Looks up a rule from the dss_rule table by token name
      *
-     * @param tokenName name that is used to register a rule with the openmrs
-     * LogicService
+     * @param tokenName name that is used to register a rule with the openmrs LogicService
      * @return Rule from the dss_rule table
      */
     public Rule getRule(String tokenName);
@@ -33,18 +35,22 @@ public interface DssDAO {
 
     public List<Rule> getPrioritizedRules(String type);
 
+    public List<Rule> getPrioritizedRulesByConcept(Concept concept);
+
+    public List<Rule> getPrioritizedRulesByConcepts(Set<Concept> concepts);
+
+    public List<Rule> getPrioritizedRulesByConceptsInEncounter(Encounter encounter);
+
     public List<Rule> getNonPrioritizedRules(String type);
 
     /**
-     * Returns a list of rules from the dss_rule table that match the criteria
-     * assigned to the rule parameter
+     * Returns a list of rules from the dss_rule table that match the criteria assigned to the rule parameter
      *
-     * @param rule Rule whose assigned attributes indicate the restrictions of
-     * the dss_rule table query
-     * @param ignoreCase String attributes assigned in the Rule parameter should
-     * be matched in the dss_rule query regardless of case
-     * @param enableLike String attributes assigned in the Rule parameter should
-     * be matched in the dss_rule query using LIKE instead of exact matching
+     * @param rule Rule whose assigned attributes indicate the restrictions of the dss_rule table query
+     * @param ignoreCase String attributes assigned in the Rule parameter should be matched in the dss_rule query
+     * regardless of case
+     * @param enableLike String attributes assigned in the Rule parameter should be matched in the dss_rule query using
+     * LIKE instead of exact matching
      * @return List<Rule>
      */
     public List<Rule> getRules(Rule rule, boolean ignoreCase,

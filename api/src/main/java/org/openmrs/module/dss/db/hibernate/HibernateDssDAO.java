@@ -1,6 +1,10 @@
 package org.openmrs.module.dss.db.hibernate;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.SQLQuery;
@@ -8,6 +12,9 @@ import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Example;
 import org.hibernate.criterion.MatchMode;
 import org.hibernate.criterion.Order;
+import org.openmrs.Concept;
+import org.openmrs.Encounter;
+import org.openmrs.Obs;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.db.DAOException;
@@ -149,6 +156,88 @@ public class HibernateDssDAO implements DssDAO {
             this.log.error(Util.getStackTrace(e));
         }
         return null;
+    }
+
+    @Override
+    public List<Rule> getPrioritizedRulesByConcepts(Set<Concept> concepts) throws DAOException {
+        try {
+
+            if (concepts == null || concepts.isEmpty()) {
+                return Collections.<Rule>emptyList();
+            }
+
+            AdministrationService adminService = Context.getAdministrationService();
+
+            String sortOrder = adminService.getGlobalProperty("dss.ruleSortOrder");
+            if (sortOrder == null) {
+                sortOrder = "DESC";
+            }
+
+            StringBuilder query = new StringBuilder();
+            query.append("SELECT DISTINCT r.*");
+            query.append(" FROM dss_rule_by_concept c");
+            query.append(" LEFT OUTER JOIN dss_rule r ON (c.rule_id=r.rule_id)");
+            query.append(" WHERE r.priority >=0 and r.priority<1000");
+            query.append("   AND r.version='1.0'");
+            query.append("   AND c.concept_id IN (");
+            int remainingElements = concepts.size();
+            for (Concept concept : concepts) {
+                query.append(concept.getConceptId());
+                remainingElements--;
+                if (remainingElements > 0) {
+                    query.append(',');
+                }
+            }
+            query.append(')');
+            query.append(" ORDER BY r.priority ").append(sortOrder);
+
+            SQLQuery qry = this.sessionFactory.getCurrentSession().createSQLQuery(query.toString());
+            qry.addEntity(Rule.class);
+
+            return qry.list();
+
+        } catch (Exception e) {
+            this.log.error(Util.getStackTrace(e));
+        }
+
+        return Collections.<Rule>emptyList();
+    }
+
+    @Override
+    public List<Rule> getPrioritizedRulesByConcept(Concept concept) throws DAOException {
+        if (concept == null) {
+            return Collections.<Rule>emptyList();
+        }
+        HashSet<Concept> concepts = new HashSet<Concept>();
+        concepts.add(concept);
+        return this.getPrioritizedRulesByConcepts(concepts);
+    }
+
+    @Override
+    public List<Rule> getPrioritizedRulesByConceptsInEncounter(Encounter encounter) throws DAOException {
+        try {
+
+            HashSet<Concept> concepts = new HashSet<Concept>();
+            for (Obs obs : encounter.getObs()) {
+                concepts.add(obs.getConcept());
+            }
+
+            if (concepts.isEmpty()) {
+                return Collections.<Rule>emptyList();
+            }
+
+            ArrayList<Rule> list = new ArrayList<Rule>();
+            for (Concept concept : concepts) {
+                list.addAll(this.getPrioritizedRulesByConcept(concept));
+            }
+
+            return list;
+
+        } catch (Exception e) {
+            this.log.error(Util.getStackTrace(e));
+        }
+
+        return Collections.<Rule>emptyList();
     }
 
     @Override

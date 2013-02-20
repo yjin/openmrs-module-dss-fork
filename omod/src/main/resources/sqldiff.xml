@@ -69,4 +69,22 @@
             change logic logic mediumtext
         </sql>
     </diff>
+    <diff>
+        <version>1.0.4</version>
+        <author>Diego Dayan</author>
+        <date>Feb 19th 2013</date>
+        <description>
+            Add helper table to enable a many-to-many relationship between concepts and rules
+        </description>
+        <sql>
+            CREATE TABLE `dss_rule_by_concept` (
+            `rule_id` int(11) NOT NULL,
+            `concept_id` int(11) NOT NULL,
+            PRIMARY KEY (`rule_id`,`concept_id`),
+            KEY `fk_concept_id` (`concept_id`),
+            CONSTRAINT `fk_rule_id` FOREIGN KEY (`rule_id`) REFERENCES `dss_rule` (`rule_id`),
+            CONSTRAINT `fk_concept_id` FOREIGN KEY (`concept_id`) REFERENCES `concept` (`concept_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+        </sql>
+    </diff>
 </sqldiff>
