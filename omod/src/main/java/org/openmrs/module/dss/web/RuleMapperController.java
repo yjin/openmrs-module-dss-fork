@@ -92,18 +92,9 @@ public class RuleMapperController extends SimpleFormController {
 
         for (Concept concept : rulesByConcept.keySet()) {
             rulesByConcept.put(concept, dssService.getMappings(concept));
-            System.out.println(concept);
-            System.out.println(rulesByConcept.get(concept).size());
-            System.out.println(rulesByConcept.get(concept));
         }
 
-        // mappings.add(rule.getTokenName() + " -> " + c.getBestShortName(Locale.ENGLISH));
-
-        System.out.println(rulesByConcept);
-        System.out.println(rulesByConcept.size());
-        System.out.println(rulesByConcept.entrySet().size());
         map.put("mappings", rulesByConcept);
-
 
         return map;
     }
