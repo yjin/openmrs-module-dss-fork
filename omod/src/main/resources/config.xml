@@ -3,7 +3,6 @@
 
 <module configVersion="1.0">
 	
-    <!-- Dss Module Properties -->
     <id>@MODULE_ID@</id>
     <name>@MODULE_NAME@</name>
     <version>@MODULE_VERSION@</version>
@@ -13,13 +12,9 @@
 
     <activator>@MODULE_PACKAGE@.DssActivator</activator>
 	
-    <!-- /Dss Module Properties -->
-	
     <require_version>1.1.10.2283</require_version>
     <require_modules>
         <require_module version="0.5.1">org.openmrs.logic</require_module>
-        <!--<require_module version="1.0.25">org.openmrs.module.chirdlutil</require_module>-->
-        <!--<require_module version="1.1.0">org.openmrs.module.chirdlutilbackports</require_module>-->
     </require_modules>	
 	
     <extension>

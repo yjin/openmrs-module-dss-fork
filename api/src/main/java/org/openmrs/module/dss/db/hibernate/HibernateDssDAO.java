@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.hibernate.Hibernate;
 import org.hibernate.SQLQuery;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Example;
@@ -16,6 +17,7 @@ import org.openmrs.Concept;
 import org.openmrs.Encounter;
 import org.openmrs.Obs;
 import org.openmrs.api.AdministrationService;
+import org.openmrs.api.ConceptService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.db.DAOException;
 import org.openmrs.module.dss.db.DssDAO;
@@ -105,6 +107,82 @@ public class HibernateDssDAO implements DssDAO {
             this.log.error(Util.getStackTrace(e));
         }
         return null;
+    }
+
+    @Override
+    public boolean addMapping(Rule rule, List<Concept> concepts) {
+        try {
+
+            // build the SQL query
+            StringBuilder sb = new StringBuilder();
+
+            sb.append("INSERT IGNORE INTO dss_rule_by_concept (rule_id, concept_id) VALUES ");
+
+            int remaining = concepts.size();
+            for (Concept concept : concepts) {
+                remaining--;
+                sb.append('(');
+                sb.append(rule.getRuleId());
+                sb.append(',');
+                sb.append(concept.getConceptId());
+                sb.append(')');
+                if (remaining > 0) {
+                    sb.append(',');
+                }
+            }
+
+            SQLQuery query = sessionFactory.getCurrentSession().createSQLQuery(sb.toString());
+            int rowsCreated = query.executeUpdate();
+
+            return rowsCreated == concepts.size();
+
+        } catch (Exception e) {
+            this.log.error(Util.getStackTrace(e));
+            return false;
+        }
+    }
+
+    @Override
+    public List<Concept> getMappings(Rule rule) {
+
+        ArrayList<Concept> concepts = new ArrayList<Concept>();
+
+        try {
+            String sql = "select concept_id from dss_rule_by_concept where rule_id=?";
+            SQLQuery qry = this.sessionFactory.getCurrentSession().createSQLQuery(sql);
+            qry.setInteger(0, rule.getRuleId());
+            qry.addScalar("concept_id", Hibernate.INTEGER);
+            List<Integer> conceptIds = qry.list();
+            ConceptService conceptService = Context.getConceptService();
+            for (Integer id : conceptIds) {
+                Concept c = conceptService.getConcept(id);
+                if (c != null) {
+                    concepts.add(c);
+                }
+            }
+
+        } catch (Exception e) {
+            this.log.error(Util.getStackTrace(e));
+
+        }
+        return concepts;
+    }
+
+    @Override
+    public List<Rule> getMappings(Concept concept) {
+        try {
+            String sql = "SELECT * FROM dss_rule"
+                    + " WHERE priority>=0 AND priority<1000"
+                    + "   AND rule_id IN (SELECT DISTINCT rule_id FROM dss_rule_by_concept WHERE concept_id=?)";
+            SQLQuery query = this.sessionFactory.getCurrentSession().createSQLQuery(sql);
+            query.setInteger(0, concept.getConceptId());
+            query.addEntity(Rule.class);
+            return query.list();
+
+        } catch (Exception e) {
+            this.log.error(Util.getStackTrace(e));
+            return new ArrayList<Rule>();
+        }
     }
 
     @Override

@@ -31,16 +31,45 @@ public interface DssDAO {
      */
     public Rule getRule(String tokenName);
 
+    /**
+     *
+     * @return
+     */
     public List<Rule> getPrioritizedRules();
 
+    /**
+     *
+     * @param type
+     * @return
+     */
     public List<Rule> getPrioritizedRules(String type);
 
+    /**
+     *
+     * @param concept
+     * @return
+     */
     public List<Rule> getPrioritizedRulesByConcept(Concept concept);
 
+    /**
+     *
+     * @param concepts
+     * @return
+     */
     public List<Rule> getPrioritizedRulesByConcepts(Set<Concept> concepts);
 
+    /**
+     *
+     * @param encounter
+     * @return
+     */
     public List<Rule> getPrioritizedRulesByConceptsInEncounter(Encounter encounter);
 
+    /**
+     *
+     * @param type
+     * @return
+     */
     public List<Rule> getNonPrioritizedRules(String type);
 
     /**
@@ -70,4 +99,25 @@ public interface DssDAO {
      * @param ruleId unique id of the rule to delete
      */
     public void deleteRule(int ruleId);
+
+    /**
+     *
+     * @param rule
+     * @param concepts
+     */
+    public boolean addMapping(Rule rule, List<Concept> concepts);
+
+    /**
+     *
+     * @param rule
+     * @return
+     */
+    public List<Concept> getMappings(Rule rule);
+
+    /**
+     *
+     * @param rule
+     * @return
+     */
+    public List<Rule> getMappings(Concept concept);
 }

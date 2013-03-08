@@ -389,4 +389,39 @@ public class DssServiceImpl implements DssService {
         return getDssDAO().addOrUpdateRule(databaseRule);
 
     }
+
+    @Override
+    public boolean addMapping(Rule rule, Concept concept) throws APIException {
+        if (concept == null) {
+            return false;
+        }
+        ArrayList<Concept> concepts = new ArrayList<Concept>();
+        concepts.add(concept);
+        return addMapping(rule, concepts);
+    }
+
+    @Override
+    public boolean addMapping(Rule rule, ArrayList<Concept> concepts) throws APIException {
+        if (concepts == null) {
+            return false;
+        }
+
+        if (concepts.isEmpty()) {
+            return false;
+        }
+
+        getDssDAO().addMapping(rule, concepts);
+
+        return true;
+    }
+
+    @Override
+    public List<Concept> getMappings(Rule rule) {
+        return getDssDAO().getMappings(rule);
+    }
+
+    @Override
+    public List<Rule> getMappings(Concept concept) {
+        return getDssDAO().getMappings(concept);
+    }
 }

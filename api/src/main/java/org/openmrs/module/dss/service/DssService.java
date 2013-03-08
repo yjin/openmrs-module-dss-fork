@@ -65,6 +65,43 @@ public interface DssService {
     public Rule addRule(String classFilename, MlmRule rule) throws APIException;
 
     /**
+     * Maps a rule to a concept
+     *
+     * @param rule
+     * @param concept
+     * @return
+     * @throws APIException
+     */
+    public boolean addMapping(Rule rule, Concept concept) throws APIException;
+
+    /**
+     * Maps a rule to a list of concepts
+     *
+     * @param rule
+     * @param concepts
+     * @return
+     * @throws APIException
+     */
+    public boolean addMapping(Rule rule, ArrayList<Concept> concepts) throws APIException;
+
+    /**
+     *
+     * @param rule
+     * @param concepts
+     * @return
+     * @throws APIException
+     */
+    public List<Concept> getMappings(Rule rule) throws APIException;
+
+    /**
+     *
+     * @param concept
+     * @return
+     * @throws APIException
+     */
+    public List<Rule> getMappings(Concept concept) throws APIException;
+
+    /**
      * Deletes an existing rule from the dss_rule table based on the ruleId
      *
      * @param ruleId unique id for the rule to be deleted from the dss_rule table
