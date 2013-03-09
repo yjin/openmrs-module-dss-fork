@@ -116,5 +116,20 @@
         <property name="serviceInterface" value="org.openmrs.module.dss.service.DssRmiService"/>
         <property name="registryPort" value="1199"/>
     </bean>
+
+   
+
+   
+    <bean id="logicObsDAO" class="org.openmrs.logic.db.hibernate.HibernateLogicObsDAO">
+        <property name="sessionFactory"><ref bean="sessionFactory"/></property>  
+    </bean>
+    <bean id="obsDssDataSource"
+class="org.openmrs.module.dss.datasource.ObsDataSource">
+        <property name="logicObsDAO"><ref bean="logicObsDAO"></ref></property>
+    </bean>
+
+    <bean id="orderDssDataSource"
+class="org.openmrs.module.dss.datasource.DssOrderDataSource">
+    </bean>
     
 </beans>

@@ -24,10 +24,6 @@ Please enter the patient's mrn:
 Please enter the mode:
 </p>
 <input type="text" name="mode" value="${mode}"/>
-<p>
-Please enter true or false:
-</p>
-<input type="text" name="drug_order" value="${drugOrder}"/>
 <input type="submit" value="Test Rule">
 </form>
 <p>
