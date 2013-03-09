@@ -4,8 +4,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.openmrs.Concept;
+import org.openmrs.Encounter;
 import org.openmrs.Patient;
 import org.openmrs.api.APIAuthenticationException;
 import org.openmrs.api.APIException;
@@ -50,8 +53,7 @@ public class DssServiceImpl implements DssService {
     }
 
     /**
-     * Sets the DAO for this service. The dao allows interaction with the
-     * database.
+     * Sets the DAO for this service. The dao allows interaction with the database.
      *
      * @param dao
      */
@@ -96,7 +98,7 @@ public class DssServiceImpl implements DssService {
     }
 
     @Override
-    public ArrayList<Result> runRules(Patient p, List<Rule> ruleList) {
+    public ArrayList<Result> runRules(Patient patient, List<Rule> ruleList) {
         log.info("Running rules...");
         ArrayList<Result> results = new ArrayList<Result>();
         Map<String, Object> parameters;
@@ -109,19 +111,43 @@ public class DssServiceImpl implements DssService {
         DssRuleProvider ruleProvider = new DssRuleProvider();
         String threadName = Thread.currentThread().getName();
 
+
         try {
             for (Rule rule : ruleList) {
+
+                // check if we have a valid rule
+                if (rule == null) {
+                    log.warn("Attempted to run a NULL Rule");
+                    continue;
+                }
+
+                log.debug("Rule data:" + " title=" + rule.getTitle() + " ruleType=" + rule.getRuleType() + " toString="
+                        + rule.toString() + " tokenName=" + rule.getTokenName());
+
+                // check if patient is within age restrictions
+                if (rule.checkAgeRestrictions(patient) == false) {
+                    log.info("Skipping rule " + rule.getTitle() + " because patient is not within age restriction.");
+                    continue;
+                }
+
                 ruleName = rule.getTokenName();
+
+                // prepare parameters
                 parameters = rule.getParameters();
                 if (parameters == null) {
                     parameters = new HashMap<String, Object>();
                 }
+                if (!parameters.containsKey("mode")) {
+                    parameters.put("mode", "PRODUCE");
+                }
                 parameters.put("ruleProvider", ruleProvider);
 
+                // load rule
                 try {
                     this.loadRule(ruleName, false);
                 } catch (APIAuthenticationException e) {
-                    //ignore a privilege exception
+                    // ignore a privilege exception
+                    log.warn("There was a privilege exception when attempting to load rule " + ruleName);
                 } catch (Exception e1) {
                     log.error("Error loading rule: " + ruleName);
                     log.error(e1.getMessage());
@@ -131,8 +157,9 @@ public class DssServiceImpl implements DssService {
                 }
 
                 long startTime = System.currentTimeMillis();
-                Result result;
+                Result result = null;
 
+                // run rule
                 try {
                     log.info("Going to evaluate the rule");
                     String serializedParams = "";
@@ -140,7 +167,7 @@ public class DssServiceImpl implements DssService {
                         serializedParams += entry.getKey() + "=" + entry.getValue() + "; ";
                     }
                     log.info("Parameters are: " + serializedParams);
-                    result = logicSvc.eval(p.getPatientId(), new LogicCriteriaImpl(ruleName), parameters);
+                    result = logicSvc.eval(patient.getPatientId(), new LogicCriteriaImpl(ruleName), parameters);
                     results.add(result);
                 } catch (APIAuthenticationException e) {
                     //ignore a privilege exception
@@ -150,6 +177,20 @@ public class DssServiceImpl implements DssService {
                     log.error(Util.getStackTrace(e));
                     results.add(null);
                     continue;
+                }
+
+                if (result != null) {
+                    // print result with actions (debug only)
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("Result data:");
+                    sb.append(" size=").append(result.size());
+                    sb.append(" toString=").append(result.toString());
+                    sb.append(" actions=");
+                    for (Result currResult : result) {
+                        sb.append(currResult.toString()).append("|");
+                        results.add(result);
+                    }
+                    log.debug(sb.toString());
                 }
 
                 long elapsedTime = System.currentTimeMillis() - startTime;
@@ -279,6 +320,21 @@ public class DssServiceImpl implements DssService {
     }
 
     @Override
+    public List<Rule> getPrioritizedRulesByConcept(Concept concept) throws DAOException {
+        return getDssDAO().getPrioritizedRulesByConcept(concept);
+    }
+
+    @Override
+    public List<Rule> getPrioritizedRulesByConcepts(Set<Concept> concepts) throws DAOException {
+        return getDssDAO().getPrioritizedRulesByConcepts(concepts);
+    }
+
+    @Override
+    public List<Rule> getPrioritizedRulesByConceptsInEncounter(Encounter encounter) throws DAOException {
+        return getDssDAO().getPrioritizedRulesByConceptsInEncounter(encounter);
+    }
+
+    @Override
     public List<Rule> getNonPrioritizedRules(String type) throws DAOException {
         return getDssDAO().getNonPrioritizedRules(type);
     }
@@ -332,5 +388,40 @@ public class DssServiceImpl implements DssService {
 
         return getDssDAO().addOrUpdateRule(databaseRule);
 
+    }
+
+    @Override
+    public boolean addMapping(Rule rule, Concept concept) throws APIException {
+        if (concept == null) {
+            return false;
+        }
+        ArrayList<Concept> concepts = new ArrayList<Concept>();
+        concepts.add(concept);
+        return addMapping(rule, concepts);
+    }
+
+    @Override
+    public boolean addMapping(Rule rule, ArrayList<Concept> concepts) throws APIException {
+        if (concepts == null) {
+            return false;
+        }
+
+        if (concepts.isEmpty()) {
+            return false;
+        }
+
+        getDssDAO().addMapping(rule, concepts);
+
+        return true;
+    }
+
+    @Override
+    public List<Concept> getMappings(Rule rule) {
+        return getDssDAO().getMappings(rule);
+    }
+
+    @Override
+    public List<Rule> getMappings(Concept concept) {
+        return getDssDAO().getMappings(concept);
     }
 }

@@ -2,6 +2,9 @@ package org.openmrs.module.dss.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import org.openmrs.Concept;
+import org.openmrs.Encounter;
 import org.openmrs.Patient;
 import org.openmrs.api.APIException;
 import org.openmrs.arden.MlmRule;
@@ -55,8 +58,7 @@ public interface DssService {
     /**
      * Adds a new rule to the dss_rule table
      *
-     * @param classFilename name of the compiled class file that contains the
-     * executable rule
+     * @param classFilename name of the compiled class file that contains the executable rule
      * @param rule MlmRule to save to the dss_rule table
      * @return Rule rule that was added to the dss_rule table
      * @throws APIException
@@ -64,10 +66,46 @@ public interface DssService {
     public Rule addRule(String classFilename, MlmRule rule) throws APIException;
 
     /**
+     * Maps a rule to a concept
+     *
+     * @param rule
+     * @param concept
+     * @return
+     * @throws APIException
+     */
+    public boolean addMapping(Rule rule, Concept concept) throws APIException;
+
+    /**
+     * Maps a rule to a list of concepts
+     *
+     * @param rule
+     * @param concepts
+     * @return
+     * @throws APIException
+     */
+    public boolean addMapping(Rule rule, ArrayList<Concept> concepts) throws APIException;
+
+    /**
+     *
+     * @param rule
+     * @param concepts
+     * @return
+     * @throws APIException
+     */
+    public List<Concept> getMappings(Rule rule) throws APIException;
+
+    /**
+     *
+     * @param concept
+     * @return
+     * @throws APIException
+     */
+    public List<Rule> getMappings(Concept concept) throws APIException;
+
+    /**
      * Deletes an existing rule from the dss_rule table based on the ruleId
      *
-     * @param ruleId unique id for the rule to be deleted from the dss_rule
-     * table
+     * @param ruleId unique id for the rule to be deleted from the dss_rule table
      */
     public void deleteRule(int ruleId);
 
@@ -90,28 +128,45 @@ public interface DssService {
      *
      * @return List<Rule>
      */
+    public List<Rule> getPrioritizedRulesByConcept(Concept concept);
+
+    /**
+     * Returns a list of rules from the dss_rule table
+     *
+     * @return List<Rule>
+     */
+    public List<Rule> getPrioritizedRulesByConcepts(Set<Concept> concepts);
+
+    /**
+     * Returns a list of rules from the dss_rule table
+     *
+     * @return List<Rule>
+     */
+    public List<Rule> getPrioritizedRulesByConceptsInEncounter(Encounter encounter);
+
+    /**
+     * Returns a list of rules from the dss_rule table
+     *
+     * @return List<Rule>
+     */
     public List<Rule> getNonPrioritizedRules(String type);
 
     /**
-     * Returns a list of rules from the dss_rule table that match the criteria
-     * assigned to the rule parameter
+     * Returns a list of rules from the dss_rule table that match the criteria assigned to the rule parameter
      *
-     * @param rule Rule whose assigned attributes indicate the restrictions of
-     * the dss_rule table query
-     * @param ignoreCase String attributes assigned in the Rule parameter should
-     * be matched in the dss_rule query regardless of case
-     * @param enableLike String attributes assigned in the Rule parameter should
-     * be matched in the dss_rule query using LIKE instead of exact matching
+     * @param rule Rule whose assigned attributes indicate the restrictions of the dss_rule table query
+     * @param ignoreCase String attributes assigned in the Rule parameter should be matched in the dss_rule query
+     * regardless of case
+     * @param enableLike String attributes assigned in the Rule parameter should be matched in the dss_rule query using
+     * LIKE instead of exact matching
      * @return List<Rule>
      */
     public List<Rule> getRules(Rule rule, boolean ignoreCase, boolean enableLike, String sortColumn);
 
     /**
-     * Loads a rule into the openmrs LogicService in preparation for executing
-     * it
+     * Loads a rule into the openmrs LogicService in preparation for executing it
      *
-     * @param rule name that the rule will be stored under in the openmrs
-     * LogicService
+     * @param rule name that the rule will be stored under in the openmrs LogicService
      * @return Rule object
      * @throws Exception
      */

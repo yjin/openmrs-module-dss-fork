@@ -13,6 +13,7 @@
                 <prop key="/module/@MODULE_ID@/searchRules.form">searchRules</prop>
                 <prop key="/module/@MODULE_ID@/deleteRules.form">deleteRules</prop>
                 <prop key="/module/@MODULE_ID@/ruleTester.form">ruleTester</prop>	
+                <prop key="/module/@MODULE_ID@/ruleMapper.form">ruleMapper</prop>	
             </props>
         </property>
     </bean>
@@ -64,6 +65,7 @@
             <value>searchRules.form</value>
         </property>
     </bean>
+
     <bean id="ruleTester" class="org.openmrs.module.dss.web.RuleTesterController">
         <property name="commandName">
             <value>ruleTesterObject</value>
@@ -75,6 +77,19 @@
             <value>ruleTester.form</value>
         </property>
     </bean>
+
+    <bean id="ruleMapper" class="org.openmrs.module.dss.web.RuleMapperController">
+        <property name="commandName">
+            <value>ruleMapperObject</value>
+        </property>
+        <property name="formView">
+            <value>/module/@MODULE_ID@/ruleMapper</value>
+        </property>
+        <property name="successView">
+            <value>ruleMapper.form</value>
+        </property>
+    </bean>
+
     <bean parent="serviceContext">
         <property name="moduleService">
             <list>

@@ -1,14 +1,23 @@
 package org.openmrs.module.dss.db.hibernate;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.hibernate.Hibernate;
 import org.hibernate.SQLQuery;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Example;
 import org.hibernate.criterion.MatchMode;
 import org.hibernate.criterion.Order;
+import org.openmrs.Concept;
+import org.openmrs.Encounter;
+import org.openmrs.Obs;
 import org.openmrs.api.AdministrationService;
+import org.openmrs.api.ConceptService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.db.DAOException;
 import org.openmrs.module.dss.db.DssDAO;
@@ -101,6 +110,82 @@ public class HibernateDssDAO implements DssDAO {
     }
 
     @Override
+    public boolean addMapping(Rule rule, List<Concept> concepts) {
+        try {
+
+            // build the SQL query
+            StringBuilder sb = new StringBuilder();
+
+            sb.append("INSERT IGNORE INTO dss_rule_by_concept (rule_id, concept_id) VALUES ");
+
+            int remaining = concepts.size();
+            for (Concept concept : concepts) {
+                remaining--;
+                sb.append('(');
+                sb.append(rule.getRuleId());
+                sb.append(',');
+                sb.append(concept.getConceptId());
+                sb.append(')');
+                if (remaining > 0) {
+                    sb.append(',');
+                }
+            }
+
+            SQLQuery query = sessionFactory.getCurrentSession().createSQLQuery(sb.toString());
+            int rowsCreated = query.executeUpdate();
+
+            return rowsCreated == concepts.size();
+
+        } catch (Exception e) {
+            this.log.error(Util.getStackTrace(e));
+            return false;
+        }
+    }
+
+    @Override
+    public List<Concept> getMappings(Rule rule) {
+
+        ArrayList<Concept> concepts = new ArrayList<Concept>();
+
+        try {
+            String sql = "select concept_id from dss_rule_by_concept where rule_id=?";
+            SQLQuery qry = this.sessionFactory.getCurrentSession().createSQLQuery(sql);
+            qry.setInteger(0, rule.getRuleId());
+            qry.addScalar("concept_id", Hibernate.INTEGER);
+            List<Integer> conceptIds = qry.list();
+            ConceptService conceptService = Context.getConceptService();
+            for (Integer id : conceptIds) {
+                Concept c = conceptService.getConcept(id);
+                if (c != null) {
+                    concepts.add(c);
+                }
+            }
+
+        } catch (Exception e) {
+            this.log.error(Util.getStackTrace(e));
+
+        }
+        return concepts;
+    }
+
+    @Override
+    public List<Rule> getMappings(Concept concept) {
+        try {
+            String sql = "SELECT * FROM dss_rule"
+                    + " WHERE priority>=0 AND priority<1000"
+                    + "   AND rule_id IN (SELECT DISTINCT rule_id FROM dss_rule_by_concept WHERE concept_id=?)";
+            SQLQuery query = this.sessionFactory.getCurrentSession().createSQLQuery(sql);
+            query.setInteger(0, concept.getConceptId());
+            query.addEntity(Rule.class);
+            return query.list();
+
+        } catch (Exception e) {
+            this.log.error(Util.getStackTrace(e));
+            return new ArrayList<Rule>();
+        }
+    }
+
+    @Override
     public List<Rule> getPrioritizedRules() throws DAOException {
         try {
             AdministrationService adminService = Context.getAdministrationService();
@@ -149,6 +234,88 @@ public class HibernateDssDAO implements DssDAO {
             this.log.error(Util.getStackTrace(e));
         }
         return null;
+    }
+
+    @Override
+    public List<Rule> getPrioritizedRulesByConcepts(Set<Concept> concepts) throws DAOException {
+        try {
+
+            if (concepts == null || concepts.isEmpty()) {
+                return Collections.<Rule>emptyList();
+            }
+
+            AdministrationService adminService = Context.getAdministrationService();
+
+            String sortOrder = adminService.getGlobalProperty("dss.ruleSortOrder");
+            if (sortOrder == null) {
+                sortOrder = "DESC";
+            }
+
+            StringBuilder query = new StringBuilder();
+            query.append("SELECT DISTINCT r.*");
+            query.append(" FROM dss_rule_by_concept c");
+            query.append(" LEFT OUTER JOIN dss_rule r ON (c.rule_id=r.rule_id)");
+            query.append(" WHERE r.priority >=0 and r.priority<1000");
+            query.append("   AND r.version='1.0'");
+            query.append("   AND c.concept_id IN (");
+            int remainingElements = concepts.size();
+            for (Concept concept : concepts) {
+                query.append(concept.getConceptId());
+                remainingElements--;
+                if (remainingElements > 0) {
+                    query.append(',');
+                }
+            }
+            query.append(')');
+            query.append(" ORDER BY r.priority ").append(sortOrder);
+
+            SQLQuery qry = this.sessionFactory.getCurrentSession().createSQLQuery(query.toString());
+            qry.addEntity(Rule.class);
+
+            return qry.list();
+
+        } catch (Exception e) {
+            this.log.error(Util.getStackTrace(e));
+        }
+
+        return Collections.<Rule>emptyList();
+    }
+
+    @Override
+    public List<Rule> getPrioritizedRulesByConcept(Concept concept) throws DAOException {
+        if (concept == null) {
+            return Collections.<Rule>emptyList();
+        }
+        HashSet<Concept> concepts = new HashSet<Concept>();
+        concepts.add(concept);
+        return this.getPrioritizedRulesByConcepts(concepts);
+    }
+
+    @Override
+    public List<Rule> getPrioritizedRulesByConceptsInEncounter(Encounter encounter) throws DAOException {
+        try {
+
+            HashSet<Concept> concepts = new HashSet<Concept>();
+            for (Obs obs : encounter.getObs()) {
+                concepts.add(obs.getConcept());
+            }
+
+            if (concepts.isEmpty()) {
+                return Collections.<Rule>emptyList();
+            }
+
+            ArrayList<Rule> list = new ArrayList<Rule>();
+            for (Concept concept : concepts) {
+                list.addAll(this.getPrioritizedRulesByConcept(concept));
+            }
+
+            return list;
+
+        } catch (Exception e) {
+            this.log.error(Util.getStackTrace(e));
+        }
+
+        return Collections.<Rule>emptyList();
     }
 
     @Override

@@ -8,6 +8,7 @@ import org.openmrs.api.AdministrationService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.BaseModuleActivator;
 import org.openmrs.module.dss.util.Util;
+import org.openmrs.notification.Alert;
 
 /**
  * Purpose: Checks that module specific global properties have been set
@@ -29,14 +30,15 @@ public class DssActivator extends BaseModuleActivator {
     }
 
     private void checkGlobalProperties() {
+        boolean thereWereErrors = false;
+
         try {
             log.info("Checking if records in global_property are set up correctly...");
             AdministrationService adminService = Context.getAdministrationService();
             Context.authenticate(adminService
                     .getGlobalProperty("scheduler.username"), adminService
                     .getGlobalProperty("scheduler.password"));
-            Iterator<GlobalProperty> properties = adminService
-                    .getAllGlobalProperties().iterator();
+            Iterator<GlobalProperty> properties = adminService.getAllGlobalProperties().iterator();
             GlobalProperty currProperty;
             String currValue;
             String currName;
@@ -47,13 +49,24 @@ public class DssActivator extends BaseModuleActivator {
                     currValue = currProperty.getPropertyValue();
                     if (currValue == null || currValue.length() == 0) {
                         this.log.error("You must set a value for global property: " + currName);
+                        thereWereErrors = true;
                     }
                 }
             }
+
         } catch (Exception e) {
+            thereWereErrors = true;
             this.log.error("Error checking global properties for dss module");
             this.log.error(e.getMessage());
             this.log.error(Util.getStackTrace(e));
+
+        } finally {
+            if (thereWereErrors) {
+                Alert alert = new Alert();
+                alert.setText("There were erros while checking the global properties required by the DSS module. Please revise the logs for more details.");
+                alert.addRecipient(Context.getAuthenticatedUser());
+                Context.getAlertService().saveAlert(alert);
+            }
         }
     }
 
