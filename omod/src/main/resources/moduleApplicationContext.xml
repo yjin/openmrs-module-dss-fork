@@ -133,7 +133,7 @@
     </bean>
 
    
-
+<!--
    
     <bean id="logicObsDAO" class="org.openmrs.logic.db.hibernate.HibernateLogicObsDAO">
         <property name="sessionFactory"><ref bean="sessionFactory"/></property>  
@@ -146,5 +146,5 @@ class="org.openmrs.module.dss.datasource.ObsDataSource">
     <bean id="orderDssDataSource"
 class="org.openmrs.module.dss.datasource.DssOrderDataSource">
     </bean>
-    
+-->
 </beans>

@@ -18,7 +18,7 @@ import org.openmrs.logic.result.Result;
 public class DssResult extends Result {
     
     public DssResult(Order order) {
-		super(new Date(), null, null, null, null, null, null, order);
+		super(order.getEncounter().getEncounterDatetime(), null, null, null, null, null, null, order);
 		
 		Concept concept = order.getConcept();
 		ConceptDatatype conceptDatatype = null;
