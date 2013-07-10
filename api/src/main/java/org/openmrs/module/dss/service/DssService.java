@@ -1,7 +1,9 @@
 package org.openmrs.module.dss.service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.openmrs.Concept;
 import org.openmrs.Encounter;
@@ -171,4 +173,47 @@ public interface DssService {
      * @throws Exception
      */
     public org.openmrs.logic.Rule loadRule(String rule, boolean updateRule) throws Exception;
+    
+    /**
+     * Returns a <Concept,List<Concept>> map from the diagnosis_drug table
+     * 
+     * @return List<Concpt>
+     */
+    public Map<Concept,List<Concept>> getDrugRecommendationByDiagnosisConceptsInEncounter(Encounter encounter);
+    
+    /**
+     * Returns a <Concept,List<Concept>> map from the diagnosis_drug table
+     * @param concepts
+     * @return List<Concept>
+     */
+    public Map<Concept,List<Concept>> getDrugRecommendationByDiagnosisConcepts(Set<Concept> concepts);
+    
+    /**
+     * Returns a list of concepts from the diagnosis_drug table
+     * @param concept
+     * @return List<Concept>
+     */
+    public List<Concept> getDrugRecommendationByDiagnosisConcept(Concept concept);
+    
+    /**
+     * Returns a <Concept,List<Concept>> map from the drug_to_drug table
+     * @param encounter
+     * @return 
+     */
+    public List<Concept> getDrugInteractionsForEncounter(Encounter encounter);
+    
+    /**
+     * Returns a <Concept,List<Concept>> map from the drug_to_drug table
+     * @param concepts
+     * @return 
+     */
+    public List<Concept> getDrugInteractionsByConcepts(Set<Concept> concepts, Integer patientId);
+    
+    /**
+     * Returns a <Concept,List<Concept>> map from the drug_to_drug table
+     * @param concept
+     * @return 
+     */
+    public List<Concept> getDrugInteractionsByConcept(Concept concept, Integer patientId);
+    
 }

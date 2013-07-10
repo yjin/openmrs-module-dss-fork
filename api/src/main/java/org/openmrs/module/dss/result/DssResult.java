@@ -18,9 +18,9 @@ import org.openmrs.logic.result.Result;
 public class DssResult extends Result {
     
     public DssResult(Order order) {
-		super(order.getEncounter().getEncounterDatetime(), null, null, null, null, null, null, order);
-		
-		Concept concept = order.getConcept();
+//		super(order.getEncounter().getEncounterDatetime(), null, null, null, null, null, null, order);
+		super(order.getEncounter().getEncounterDatetime(), order.getConcept(), order); 
+/*		Concept concept = order.getConcept();
 		ConceptDatatype conceptDatatype = null;
 		
 		if (concept != null) {
@@ -41,6 +41,8 @@ public class DssResult extends Result {
 				setDatatype(Datatype.BOOLEAN);
                       
 		} 
+                                */
+
     }
 
 }

@@ -424,4 +424,34 @@ public class DssServiceImpl implements DssService {
     public List<Rule> getMappings(Concept concept) {
         return getDssDAO().getMappings(concept);
     }
+    
+    @Override
+    public Map<Concept,List<Concept>> getDrugRecommendationByDiagnosisConceptsInEncounter(Encounter encounter){
+        return getDssDAO().getDrugRecommendationByDiagnosisConceptsInEncounter(encounter);
+    }
+
+    @Override
+    public Map<Concept,List<Concept>> getDrugRecommendationByDiagnosisConcepts(Set<Concept> concepts) {
+        return getDssDAO().getDrugRecommendationByDiagnosisConcepts(concepts);
+    }
+
+    @Override
+    public List<Concept> getDrugRecommendationByDiagnosisConcept(Concept concept) {
+        return getDssDAO().getDrugRecommendationByDiagnosisConcept(concept);
+    }
+
+    @Override
+    public List<Concept> getDrugInteractionsForEncounter(Encounter encounter) {
+        return getDssDAO().getDrugInteractionsForEncounter(encounter);
+    }
+
+    @Override
+    public List<Concept> getDrugInteractionsByConcepts(Set<Concept> concepts, Integer patientId) {
+        return getDssDAO().getDrugInteractionsByConcepts(concepts, patientId);
+    }
+
+    @Override
+    public List<Concept> getDrugInteractionsByConcept(Concept concept, Integer patientId) {
+        return getDssDAO().getDrugInteractionsByConcept(concept, patientId);
+    }
 }

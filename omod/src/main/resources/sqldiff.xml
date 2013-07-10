@@ -87,4 +87,38 @@
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
         </sql>
     </diff>
+    <diff>
+        <version>1.0.5</version>
+        <author>Yan Jin</author>
+        <date>July 7th 2013</date>
+        <description>
+            Add mapping table to enable a many-to-many relationship between diagnosis and drugs
+        </description>
+        <sql>
+            CREATE TABLE `diagnosis_to_drug` (
+            `diagnosis_concept_id` int(11) NOT NULL,
+            `drug_concept_id` int(11) NOT NULL,
+            PRIMARY KEY (`diagnosis_concept_id`,`drug_concept_id`),
+            CONSTRAINT `fk_diagnosis_concept_id` FOREIGN KEY (`diagnosis_concept_id`) REFERENCES `concept` (`concept_id`),
+            CONSTRAINT `fk_drug_concept_id` FOREIGN KEY (`drug_concept_id`) REFERENCES `concept` (`concept_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+        </sql>
+    </diff>
+    <diff>
+        <version>1.0.6</version>
+        <author>Yan Jin</author>
+        <date>July 8th 2013</date>
+        <description>
+            Add mapping table to enable a many-to-many relationship between drugs and drugs
+        </description>
+        <sql>
+            CREATE TABLE `drug_to_drug` (
+            `drug_concept_left_id` int(11) NOT NULL,
+            `drug_concept_right_id` int(11) NOT NULL,
+            PRIMARY KEY (`drug_concept_left_id`,`drug_concept_right_id`),
+            CONSTRAINT `fk_drug_concept_left_id` FOREIGN KEY (`drug_concept_left_id`) REFERENCES `concept` (`concept_id`),
+            CONSTRAINT `fk_drug_concept_right_id` FOREIGN KEY (`drug_concept_right_id`) REFERENCES `concept` (`concept_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+        </sql>
+    </diff>
 </sqldiff>

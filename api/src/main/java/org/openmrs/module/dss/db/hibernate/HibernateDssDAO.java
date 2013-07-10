@@ -2,8 +2,11 @@ package org.openmrs.module.dss.db.hibernate;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -386,5 +389,254 @@ public class HibernateDssDAO implements DssDAO {
         }
 
         return null;
+    }
+
+    @Override
+    public Map<Concept,List<Concept>> getDrugRecommendationByDiagnosisConceptsInEncounter(Encounter encounter) {
+        try {
+            // get obs from encounter
+            HashSet<Concept> obsConcepts = new HashSet<Concept>();
+            for (Obs obs : encounter.getObs()) {
+                obsConcepts.add(obs.getConcept());
+            }
+
+            if (obsConcepts.isEmpty()) {
+                return Collections.<Concept,List<Concept>>emptyMap();
+            }           
+
+            // get all drug recommendations to the obs of this encounter
+            HashMap<Concept, List<Concept>> recommendationList = new HashMap<Concept, List<Concept>>();
+
+            recommendationList.putAll(this.getDrugRecommendationByDiagnosisConcepts(obsConcepts));
+
+
+            if(recommendationList.isEmpty()) {
+                return Collections.<Concept,List<Concept>>emptyMap();
+            }
+            
+
+            // get orders from encounter
+            HashSet<Concept> orderConcepts = new HashSet<Concept>();
+            for (org.openmrs.Order order : encounter.getOrders()) {
+                orderConcepts.add(order.getConcept());
+            }
+
+            if (orderConcepts.isEmpty()) {
+                return recommendationList;
+            }
+
+            HashMap<Concept, List<Concept>> finalList = new HashMap<Concept, List<Concept>>();
+            Iterator it = recommendationList.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<Concept,List<Concept>> pairs = (Map.Entry<Concept,List<Concept>>)it.next();
+                boolean shouldAdd = true;
+                for(Concept orderConcept: orderConcepts){
+                    if(pairs.getValue().contains(orderConcept)){
+                        shouldAdd = false;
+                        break;
+                    }
+                } 
+                if(shouldAdd){
+                    finalList.put(pairs.getKey(),pairs.getValue());
+                }                
+            }
+
+            if(finalList.isEmpty()){
+                return Collections.<Concept,List<Concept>>emptyMap();
+            }
+            return finalList;
+
+        } catch (Exception e) {
+            this.log.error(Util.getStackTrace(e));
+        }
+
+        return Collections.<Concept,List<Concept>>emptyMap();
+    }
+
+    @Override
+    public List<Concept> getDrugRecommendationByDiagnosisConcept(Concept concept) {
+        try {
+
+            if (concept == null) {
+                return Collections.<Concept>emptyList();
+            }
+
+            StringBuilder query = new StringBuilder();
+            query.append("SELECT DISTINCT d.drug_concept_id");
+            query.append(" FROM diagnosis_to_drug d");
+            query.append(" WHERE d.diagnosis_concept_id=");
+            query.append(concept.getConceptId());
+
+            // scalar query
+            SQLQuery qry = this.sessionFactory.getCurrentSession().createSQLQuery(query.toString());
+  //          qry.addEntity(Integer.class);
+
+            List<Integer> drugConceptIds = qry.list();
+            
+            if(drugConceptIds.isEmpty()){
+                return Collections.<Concept>emptyList();
+            }
+            
+            List<Concept> drugConcepts = new ArrayList<Concept>();
+            
+            ConceptService conceptService = Context.getConceptService();
+            for(Integer id: drugConceptIds){
+                drugConcepts.add(conceptService.getConcept(id));
+            }
+            
+            return drugConcepts;
+
+        } catch (Exception e) {
+            this.log.error(Util.getStackTrace(e));
+        }
+
+        return Collections.<Concept>emptyList();
+    }
+
+    @Override
+    public Map<Concept,List<Concept>> getDrugRecommendationByDiagnosisConcepts(Set<Concept> concepts) {
+        if (concepts == null || concepts.isEmpty()) {
+            return Collections.<Concept,List<Concept>>emptyMap();
+        }
+        
+        HashMap<Concept,List<Concept>> hm = new HashMap<Concept,List<Concept>>();
+        for(Concept concept:concepts){
+            List<Concept> list = this.getDrugRecommendationByDiagnosisConcept(concept);
+            if(!list.isEmpty()){
+                hm.put(concept, list);
+            }
+        }
+
+        return hm;
+    }
+
+    @Override
+    public List<Concept> getDrugInteractionsForEncounter(Encounter encounter) {
+       try {
+            // get orders from encounter
+            HashSet<Concept> orderConcepts = new HashSet<Concept>();
+            for (org.openmrs.Order order : encounter.getOrders()) {
+                orderConcepts.add(order.getConcept());
+            }
+
+            if (orderConcepts.isEmpty()) {
+                return Collections.<Concept>emptyList(); 
+            }           
+            System.out.print("the number of orders: ");
+            System.out.println(orderConcepts.size());
+            Integer patientId = encounter.getPatientId();
+            
+            List<Concept> resultList = this.getDrugInteractionsByConcepts(orderConcepts,patientId);
+            
+            if(resultList.isEmpty()){
+                return Collections.<Concept>emptyList(); 
+            }
+            System.out.println("the result is not empty");
+            System.out.println(resultList.get(0).getName().getName());
+            return resultList;
+
+
+        } catch (Exception e) {
+            this.log.error(Util.getStackTrace(e));
+        }
+
+        return Collections.<Concept>emptyList();         
+    }
+
+    @Override
+    public List<Concept> getDrugInteractionsByConcepts(Set<Concept> concepts, Integer patientId) {
+       try {
+         
+            
+            List<Concept> interactionBetweenDrugOrders = this.getInteractionBetweenDrugOrders(concepts, patientId);
+
+            
+           
+            if(interactionBetweenDrugOrders.isEmpty()){
+                return Collections.<Concept>emptyList();
+            }
+            
+            System.out.println("the concept from query: " + interactionBetweenDrugOrders.get(0).getName().getName());
+            
+            List<Concept> interactionResult = new ArrayList<Concept>();
+            
+            interactionResult.addAll(interactionBetweenDrugOrders);
+            
+            if(interactionResult.isEmpty()){
+                return Collections.<Concept>emptyList();
+            }
+            
+            return interactionResult;
+
+        } catch (Exception e) {
+            this.log.error(Util.getStackTrace(e));
+        }
+
+        return Collections.<Concept>emptyList();  
+    }
+
+    @Override
+    public List<Concept> getDrugInteractionsByConcept(Concept concept, Integer patientId) {
+        if (concept == null) {
+            return Collections.<Concept>emptyList();
+        }
+        HashSet<Concept> concepts = new HashSet<Concept>();
+        concepts.add(concept);
+        return this.getDrugInteractionsByConcepts(concepts, patientId);
+    }
+    
+    
+    List<Concept> getInteractionBetweenDrugOrders(Set<Concept> concepts, Integer patientId){
+        
+        try {
+            if (concepts == null || concepts.isEmpty()) {
+                return Collections.<Concept>emptyList();  
+            }
+           
+            StringBuilder query = new StringBuilder();
+            query.append("SELECT DISTINCT o.concept_id");
+            query.append(" from drug_to_drug d");
+            query.append(" RIGHT OUTER JOIN orders o ON (d.drug_concept_right_id=o.concept_id)");
+            query.append(" WHERE o.auto_expire_date>DATE(NOW())");
+            query.append("   AND o.patient_id=");
+            query.append(patientId);
+            query.append("   AND d.drug_concept_left_id IN (");
+
+            int remainingElements = concepts.size();
+            for(Concept concept: concepts){
+                query.append(concept.getConceptId());
+                remainingElements--;
+                if(remainingElements > 0){
+                    query.append(",");
+                }
+            }            
+            query.append(")");          
+
+            // scalar query
+            SQLQuery qry = this.sessionFactory.getCurrentSession().createSQLQuery(query.toString());
+
+
+            List<Integer> ordersConceptIds = qry.list();
+            
+            if(ordersConceptIds.isEmpty()){
+                return Collections.<Concept>emptyList(); 
+            }
+            
+            System.out.println("the result from query: ");
+            System.out.println(ordersConceptIds.get(0));
+            
+            List<Concept> resultList = new ArrayList<Concept>();
+            ConceptService conceptService = Context.getConceptService();
+            for(Integer id: ordersConceptIds){
+                Concept concept = conceptService.getConcept(id);
+                resultList.add(concept);
+            }
+            
+            return resultList;
+            
+        } catch (Exception e){
+            this.log.error(Util.getStackTrace(e));
+        }
+        return Collections.<Concept>emptyList(); 
     }
 }

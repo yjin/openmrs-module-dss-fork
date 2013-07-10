@@ -1,6 +1,8 @@
 package org.openmrs.module.dss.db;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.openmrs.Concept;
 import org.openmrs.Encounter;
@@ -120,4 +122,36 @@ public interface DssDAO {
      * @return
      */
     public List<Rule> getMappings(Concept concept);
+
+    /**
+     * 
+     * @param encounter
+     * @return 
+     */
+    public Map<Concept,List<Concept>> getDrugRecommendationByDiagnosisConceptsInEncounter(Encounter encounter);
+
+    /**
+     * 
+     * @param concepts
+     * @return 
+     */
+    public Map<Concept,List<Concept>> getDrugRecommendationByDiagnosisConcepts(Set<Concept> concepts);
+
+    /**
+     * 
+     * @param concept
+     * @return 
+     */
+    public List<Concept> getDrugRecommendationByDiagnosisConcept(Concept concept);
+
+    /**
+     * 
+     * @param encounter
+     * @return 
+     */
+    public List<Concept> getDrugInteractionsForEncounter(Encounter encounter);
+
+    public List<Concept> getDrugInteractionsByConcepts(Set<Concept> concepts, Integer patientId);
+
+    public List<Concept> getDrugInteractionsByConcept(Concept concept, Integer patientId);
 }

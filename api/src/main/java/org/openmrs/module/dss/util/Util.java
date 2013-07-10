@@ -23,6 +23,7 @@ import org.openmrs.api.ConceptService;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.ObsService;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.dss.hibernateBeans.Rule;
 
 /**
  * This class contains several utility methods and other modules that depend on
@@ -494,5 +495,17 @@ public class Util {
         } catch (Exception e) {
             throw new DigestException("couldn't make digest of partial content");
         }
+    }
+    
+    public static Rule convertRule(org.openmrs.logic.Rule rule, String tokenName){
+        Rule hbRule = new Rule();
+        hbRule.setRuleId(0);
+        hbRule.setClassFilename(tokenName);
+        hbRule.setTitle(tokenName);
+        hbRule.setKeywords(tokenName);
+        hbRule.setTokenName(tokenName);
+        hbRule.setAgeMin(0);
+        hbRule.setAgeMax(100);
+        return hbRule;
     }
 }
