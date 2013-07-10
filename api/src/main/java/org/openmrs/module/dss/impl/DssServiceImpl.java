@@ -1,7 +1,9 @@
 package org.openmrs.module.dss.impl;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -441,8 +443,8 @@ public class DssServiceImpl implements DssService {
     }
 
     @Override
-    public List<Concept> getDrugInteractionsForEncounter(Encounter encounter) {
-        return getDssDAO().getDrugInteractionsForEncounter(encounter);
+    public List<Concept> getDrugInteractionsForEncounter(Encounter encounter, Integer patientId) {
+        return getDssDAO().getDrugInteractionsForEncounter(encounter, patientId);
     }
 
     @Override
@@ -453,5 +455,41 @@ public class DssServiceImpl implements DssService {
     @Override
     public List<Concept> getDrugInteractionsByConcept(Concept concept, Integer patientId) {
         return getDssDAO().getDrugInteractionsByConcept(concept, patientId);
+    }
+    
+    @Override
+    public List<Result> runGeneralizedRules(Patient patient) {
+        LogicService logicService = Context.getLogicService();
+        Rule example1 = Util.convertRule(logicService.getRule("drugAllergy"), "drugAllergy");
+        Rule example2 = Util.convertRule(logicService.getRule("drugRecommendation"), "drugRecommendation");
+        Rule example3 = Util.convertRule(logicService.getRule("drugInteraction"), "drugInteraction");
+        
+        List<Rule> rules = new ArrayList<Rule>();
+        rules.add(example1);
+        rules.add(example2);
+        rules.add(example3);
+
+        List<Result> results = this.runRules(patient, rules);
+
+        if(results.isEmpty()){
+            return Collections.<Result>emptyList();
+        }
+        return results;
+    }
+
+    @Override
+    public List<Rule> getGeneralizedRules() {
+
+        Rule rule1 = dao.getRule("GENERALIZED1");
+        Rule rule2 = dao.getRule("GENERALIZED2");
+        Rule rule3 = dao.getRule("GENERALIZED3");
+
+        List<Rule> rules = new ArrayList<Rule>();
+        
+        rules.add(rule1);
+        rules.add(rule2);
+        rules.add(rule3);
+        
+        return rules;
     }
 }

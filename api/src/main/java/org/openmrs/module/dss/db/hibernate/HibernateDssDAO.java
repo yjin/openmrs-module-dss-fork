@@ -19,8 +19,11 @@ import org.hibernate.criterion.Order;
 import org.openmrs.Concept;
 import org.openmrs.Encounter;
 import org.openmrs.Obs;
+import org.openmrs.Person;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.ConceptService;
+import org.openmrs.api.OrderService;
+import org.openmrs.api.PersonService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.db.DAOException;
 import org.openmrs.module.dss.db.DssDAO;
@@ -394,10 +397,15 @@ public class HibernateDssDAO implements DssDAO {
     @Override
     public Map<Concept,List<Concept>> getDrugRecommendationByDiagnosisConceptsInEncounter(Encounter encounter) {
         try {
+            OrderService orderService = Context.getOrderService();
             // get obs from encounter
+            Set<Obs> obs = encounter.getObs();
+            if(obs.isEmpty()){
+                return Collections.<Concept,List<Concept>>emptyMap();
+            }
             HashSet<Concept> obsConcepts = new HashSet<Concept>();
-            for (Obs obs : encounter.getObs()) {
-                obsConcepts.add(obs.getConcept());
+            for (Obs ob : obs) {
+                obsConcepts.add(ob.getConcept());
             }
 
             if (obsConcepts.isEmpty()) {
@@ -416,8 +424,9 @@ public class HibernateDssDAO implements DssDAO {
             
 
             // get orders from encounter
+            List<org.openmrs.Order> orders = orderService.getOrdersByEncounter(encounter);
             HashSet<Concept> orderConcepts = new HashSet<Concept>();
-            for (org.openmrs.Order order : encounter.getOrders()) {
+            for (org.openmrs.Order order : orders) {
                 orderConcepts.add(order.getConcept());
             }
 
@@ -511,11 +520,14 @@ public class HibernateDssDAO implements DssDAO {
     }
 
     @Override
-    public List<Concept> getDrugInteractionsForEncounter(Encounter encounter) {
+    public List<Concept> getDrugInteractionsForEncounter(Encounter encounter, Integer patientId) {
        try {
+           OrderService orderService = Context.getOrderService();
+
             // get orders from encounter
             HashSet<Concept> orderConcepts = new HashSet<Concept>();
-            for (org.openmrs.Order order : encounter.getOrders()) {
+            List<org.openmrs.Order> orders = orderService.getOrdersByEncounter(encounter);
+            for (org.openmrs.Order order : orders) {
                 orderConcepts.add(order.getConcept());
             }
 
@@ -524,7 +536,6 @@ public class HibernateDssDAO implements DssDAO {
             }           
             System.out.print("the number of orders: ");
             System.out.println(orderConcepts.size());
-            Integer patientId = encounter.getPatientId();
             
             List<Concept> resultList = this.getDrugInteractionsByConcepts(orderConcepts,patientId);
             
@@ -592,7 +603,7 @@ public class HibernateDssDAO implements DssDAO {
             if (concepts == null || concepts.isEmpty()) {
                 return Collections.<Concept>emptyList();  
             }
-           
+           System.out.println("preparing for query.");
             StringBuilder query = new StringBuilder();
             query.append("SELECT DISTINCT o.concept_id");
             query.append(" from drug_to_drug d");

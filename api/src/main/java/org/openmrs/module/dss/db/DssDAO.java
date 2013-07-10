@@ -149,7 +149,7 @@ public interface DssDAO {
      * @param encounter
      * @return 
      */
-    public List<Concept> getDrugInteractionsForEncounter(Encounter encounter);
+    public List<Concept> getDrugInteractionsForEncounter(Encounter encounter, Integer patientId);
 
     public List<Concept> getDrugInteractionsByConcepts(Set<Concept> concepts, Integer patientId);
 

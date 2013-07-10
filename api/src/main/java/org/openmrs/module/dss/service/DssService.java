@@ -13,6 +13,7 @@ import org.openmrs.arden.MlmRule;
 import org.openmrs.logic.result.Result;
 import org.openmrs.module.dss.hibernateBeans.Rule;
 import org.openmrs.arden.MlmRule;
+import org.openmrs.module.dss.util.Util;
 
 /**
  * Defines services used by this module
@@ -200,7 +201,7 @@ public interface DssService {
      * @param encounter
      * @return 
      */
-    public List<Concept> getDrugInteractionsForEncounter(Encounter encounter);
+    public List<Concept> getDrugInteractionsForEncounter(Encounter encounter, Integer patientId);
     
     /**
      * Returns a <Concept,List<Concept>> map from the drug_to_drug table
@@ -215,5 +216,18 @@ public interface DssService {
      * @return 
      */
     public List<Concept> getDrugInteractionsByConcept(Concept concept, Integer patientId);
+    
+    /**
+     * 
+     * @param patient
+     * @return 
+     */
+    public List<Result> runGeneralizedRules(Patient patient);
+    
+    /**
+     * 
+     * @return 
+     */
+    public List<Rule> getGeneralizedRules();
     
 }
