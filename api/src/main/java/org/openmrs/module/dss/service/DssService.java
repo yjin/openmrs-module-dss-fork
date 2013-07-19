@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.openmrs.Concept;
+import org.openmrs.DrugOrder;
 import org.openmrs.Encounter;
+import org.openmrs.Obs;
 import org.openmrs.Patient;
 import org.openmrs.api.APIException;
 import org.openmrs.arden.MlmRule;
@@ -180,54 +182,34 @@ public interface DssService {
      * 
      * @return List<Concpt>
      */
-    public Map<Concept,List<Concept>> getDrugRecommendationByDiagnosisConceptsInEncounter(Encounter encounter);
+    public Map<Concept,List<Concept>> getDrugRecommendationForEncounter(Encounter encounter);
+    
     
     /**
-     * Returns a <Concept,List<Concept>> map from the diagnosis_drug table
-     * @param concepts
-     * @return List<Concept>
-     */
-    public Map<Concept,List<Concept>> getDrugRecommendationByDiagnosisConcepts(Set<Concept> concepts);
-    
-    /**
-     * Returns a list of concepts from the diagnosis_drug table
-     * @param concept
-     * @return List<Concept>
-     */
-    public List<Concept> getDrugRecommendationByDiagnosisConcept(Concept concept);
-    
-    /**
-     * Returns a <Concept,List<Concept>> map from the drug_to_drug table
+     * Returns a <Concept,List<Concept>> map from the poor_drug_interactions table
      * @param encounter
      * @return 
      */
-    public List<Concept> getDrugInteractionsForEncounter(Encounter encounter, Integer patientId);
+    public Map<Concept,Set<Concept>> getPoorDrugInteractionsForEncounter(Encounter encounter, Integer patientId);
     
     /**
-     * Returns a <Concept,List<Concept>> map from the drug_to_drug table
-     * @param concepts
+     * Returns a set of concepts each of which indicates allergy to a drug
+     * @param encounter
      * @return 
      */
-    public List<Concept> getDrugInteractionsByConcepts(Set<Concept> concepts, Integer patientId);
+    public Set<Concept> getAllergyConceptsToDrugOrdersInEncounter(Encounter encounter);
+    
     
     /**
-     * Returns a <Concept,List<Concept>> map from the drug_to_drug table
-     * @param concept
-     * @return 
-     */
-    public List<Concept> getDrugInteractionsByConcept(Concept concept, Integer patientId);
-    
-    /**
-     * 
-     * @param patient
-     * @return 
-     */
-    public List<Result> runGeneralizedRules(Patient patient);
-    
-    /**
-     * 
+     * Return generalized MLM's
      * @return 
      */
     public List<Rule> getGeneralizedRules();
+    
+    /**Return generalized Java rules
+     * 
+     * @return 
+     */
+    public List<Rule> getGeneralizedJavaRules();
     
 }

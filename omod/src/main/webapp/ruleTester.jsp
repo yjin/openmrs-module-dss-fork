@@ -35,9 +35,8 @@ Please enter the mode:
 
 </c:if>
 
-<span>DEBUG:</span>
-<span>${debug}</span>
-<span> | </span>
+<br />
+<span>DEBUG</span>
 <br />
 <span>PATIENT:</span>
 <span>${patient}</span>
@@ -49,8 +48,6 @@ Please enter the mode:
 <br />
 <span>ruleName:</span>
 <span>${ruleName}</span>
-<span> | </span>
-<span>${debug}</span>
 <span> | </span>
 <br />
 <span>NUMBER OF RULES</span>

@@ -5,7 +5,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.openmrs.Concept;
+import org.openmrs.Drug;
+import org.openmrs.DrugOrder;
 import org.openmrs.Encounter;
+import org.openmrs.Obs;
+import org.openmrs.Person;
 import org.openmrs.module.dss.hibernateBeans.Rule;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -125,33 +129,31 @@ public interface DssDAO {
 
     /**
      * 
-     * @param encounter
-     * @return 
-     */
-    public Map<Concept,List<Concept>> getDrugRecommendationByDiagnosisConceptsInEncounter(Encounter encounter);
-
-    /**
-     * 
      * @param concepts
      * @return 
      */
-    public Map<Concept,List<Concept>> getDrugRecommendationByDiagnosisConcepts(Set<Concept> concepts);
+    public Map<Concept,List<Concept>> getDrugRecommendationByObs(Set<Obs> obs);
 
     /**
      * 
      * @param concept
      * @return 
      */
-    public List<Concept> getDrugRecommendationByDiagnosisConcept(Concept concept);
-
+    public List<Concept> getDrugRecommendationByOb(Obs ob);
+    
     /**
      * 
-     * @param encounter
+     * @param drugOrders
      * @return 
      */
-    public List<Concept> getDrugInteractionsForEncounter(Encounter encounter, Integer patientId);
+    public Set<Drug> getActiveMedicationsByDrugOrders(List<DrugOrder> drugOrders);
 
-    public List<Concept> getDrugInteractionsByConcepts(Set<Concept> concepts, Integer patientId);
 
-    public List<Concept> getDrugInteractionsByConcept(Concept concept, Integer patientId);
+    public List<Concept> getInteractionListByDrugConcepts(Set<Concept> concepts);
+    
+    public List<Concept> getInteractionListByDrugConcept(Concept concept);
+    
+    public Set<Drug> getDrugsInInteractionList(List<Concept> interactionConcepts, Integer patientId);
+    
+    public Set<Concept> getAllergiesFromActiveListByDrugs(Set<Drug> drugs, Person person);
 }

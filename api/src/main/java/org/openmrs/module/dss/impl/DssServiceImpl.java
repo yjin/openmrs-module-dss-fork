@@ -4,17 +4,26 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.Concept;
+import org.openmrs.Drug;
+import org.openmrs.DrugOrder;
 import org.openmrs.Encounter;
+import org.openmrs.Obs;
 import org.openmrs.Patient;
+import org.openmrs.Person;
 import org.openmrs.api.APIAuthenticationException;
 import org.openmrs.api.APIException;
 import org.openmrs.api.AdministrationService;
+import org.openmrs.api.ConceptService;
+import org.openmrs.api.ObsService;
+import org.openmrs.api.OrderService;
+import org.openmrs.api.PersonService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.db.DAOException;
 import org.openmrs.arden.MlmRule;
@@ -428,54 +437,275 @@ public class DssServiceImpl implements DssService {
     }
     
     @Override
-    public Map<Concept,List<Concept>> getDrugRecommendationByDiagnosisConceptsInEncounter(Encounter encounter){
-        return getDssDAO().getDrugRecommendationByDiagnosisConceptsInEncounter(encounter);
+    public Map<Concept,List<Concept>> getDrugRecommendationForEncounter(Encounter encounter){
+        try {
+            OrderService orderService = Context.getOrderService();
+            
+            // get obs from encounter
+            Set<Obs> obs = encounter.getObs();
+            System.out.println("encounter id: " + encounter.getEncounterId());
+            if(obs.isEmpty()){
+                System.out.println("obs is empty. drug recommendation.");
+                return Collections.<Concept,List<Concept>>emptyMap();
+            }         
+            // get all drug recommendations to the obs of this encounter
+            HashMap<Concept, List<Concept>> recommendationList = new HashMap<Concept, List<Concept>>();
+
+            recommendationList.putAll(getDssDAO().getDrugRecommendationByObs(obs));
+
+
+            if(recommendationList.isEmpty()) {
+                return Collections.<Concept,List<Concept>>emptyMap();
+            }
+            
+            // get drug orders of this patient;
+            List<DrugOrder> drugOrders = orderService.getDrugOrdersByPatient(encounter.getPatient());
+            if(drugOrders.isEmpty()){
+                return recommendationList;
+            }
+            
+            // get drugs in use from drug orders
+            Set<Drug> drugs = getDssDAO().getActiveMedicationsByDrugOrders(drugOrders);
+            
+            if(drugs.isEmpty()){
+                return Collections.<Concept,List<Concept>>emptyMap();
+            }
+            
+            // extract concept from drugs, using Set to eliminate duplicates
+            Set<Concept> drugConcepts = new HashSet<Concept>();
+            for(Drug drug: drugs){
+                drugConcepts.add(drug.getConcept());
+            }
+
+            HashMap<Concept, List<Concept>> finalList = new HashMap<Concept, List<Concept>>();
+            Iterator it = recommendationList.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<Concept,List<Concept>> pairs = (Map.Entry<Concept,List<Concept>>)it.next();
+                boolean shouldAdd = true;
+                for(Concept drugConcept: drugConcepts){
+                    if(pairs.getValue().contains(drugConcept)){
+                        shouldAdd = false;
+                        break;
+                    }
+                } 
+                if(shouldAdd){
+                    finalList.put(pairs.getKey(),pairs.getValue());
+                }                
+            }
+
+            if(finalList.isEmpty()){
+                return Collections.<Concept,List<Concept>>emptyMap();
+            }
+            return finalList;
+
+        } catch (Exception e) {
+            this.log.error(Util.getStackTrace(e));
+        }
+
+        return Collections.<Concept,List<Concept>>emptyMap();
     }
 
     @Override
-    public Map<Concept,List<Concept>> getDrugRecommendationByDiagnosisConcepts(Set<Concept> concepts) {
-        return getDssDAO().getDrugRecommendationByDiagnosisConcepts(concepts);
+    public Map<Concept,Set<Concept>> getPoorDrugInteractionsForEncounter(Encounter encounter, Integer patientId) {
+       try {
+           OrderService orderService = Context.getOrderService();
+
+            // get orders from encounter
+            HashSet<Concept> orderConcepts = new HashSet<Concept>();
+            // get drug orders from encounter
+            List<Encounter> encounters = new ArrayList<Encounter>();
+            encounters.add(encounter);
+            List<DrugOrder> drugOrders = orderService.getOrders(DrugOrder.class, null, null, OrderService.ORDER_STATUS.ANY, null, encounters, null);
+            if(drugOrders.isEmpty()){
+                System.out.println("drug orders empty in drug interaction.");
+                return Collections.<Concept,Set<Concept>>emptyMap();
+            }
+
+            Map<Concept,Set<Concept>> resultList = this.getDrugInteractionsByDrugOrders(drugOrders,patientId);
+            
+            if(resultList.isEmpty()){
+                return Collections.<Concept,Set<Concept>>emptyMap();
+            }
+            return resultList;
+
+
+        } catch (Exception e) {
+            this.log.error(Util.getStackTrace(e));
+        }
+
+        return Collections.<Concept,Set<Concept>>emptyMap();
+    }
+
+    
+    public Map<Concept,Set<Concept>> getDrugInteractionsByDrugOrders(List<DrugOrder> drugOrders, Integer patientId) {
+       try {
+         
+           if(drugOrders.isEmpty()){
+               return Collections.<Concept,Set<Concept>>emptyMap();
+           }
+           
+           // use HashSet to eliminate duplicates
+           Set<Concept> drugConcepts = new HashSet<Concept>();
+           
+           for(DrugOrder drugOrder: drugOrders){
+               Drug drug = drugOrder.getDrug();
+               if(drug != null){
+                    drugConcepts.add(drug.getConcept());
+               }
+           }
+           
+           Map<Concept,Set<Concept>> resultSet = new HashMap<Concept,Set<Concept>>();
+           
+           for(Concept drugConcept: drugConcepts){
+               List<Concept> interactionListByDrugConcept = getDssDAO().getInteractionListByDrugConcept(drugConcept);
+               if(!interactionListByDrugConcept.isEmpty()){
+                   Set<Drug> drugsInInteractionList = getDssDAO().getDrugsInInteractionList(interactionListByDrugConcept, patientId);
+                   if(!drugsInInteractionList.isEmpty()){
+                        Set<Concept> interactionResult = new HashSet<Concept>();
+                        for(Drug drug: drugsInInteractionList){
+                        interactionResult.add(drug.getConcept());
+                        }
+                       resultSet.put(drugConcept, interactionResult);
+                   }
+               }
+               
+           }
+            
+            if(resultSet.isEmpty()){
+                return Collections.<Concept,Set<Concept>>emptyMap();
+            }
+            
+            return resultSet;
+
+        } catch (Exception e) {
+            this.log.error(Util.getStackTrace(e));
+        }
+
+        return Collections.<Concept,Set<Concept>>emptyMap();  
+    }
+
+    
+    public Map<Concept,Set<Concept>> getDrugInteractionsByDrugOrder(DrugOrder drugOrder, Integer patientId) {
+        if (drugOrder == null) {
+            return Collections.<Concept,Set<Concept>>emptyMap();
+        }
+        List<DrugOrder> drugOrders = new ArrayList<DrugOrder>();
+        drugOrders.add(drugOrder);
+        return this.getDrugInteractionsByDrugOrders(drugOrders, patientId);
     }
 
     @Override
-    public List<Concept> getDrugRecommendationByDiagnosisConcept(Concept concept) {
-        return getDssDAO().getDrugRecommendationByDiagnosisConcept(concept);
-    }
-
-    @Override
-    public List<Concept> getDrugInteractionsForEncounter(Encounter encounter, Integer patientId) {
-        return getDssDAO().getDrugInteractionsForEncounter(encounter, patientId);
-    }
-
-    @Override
-    public List<Concept> getDrugInteractionsByConcepts(Set<Concept> concepts, Integer patientId) {
-        return getDssDAO().getDrugInteractionsByConcepts(concepts, patientId);
-    }
-
-    @Override
-    public List<Concept> getDrugInteractionsByConcept(Concept concept, Integer patientId) {
-        return getDssDAO().getDrugInteractionsByConcept(concept, patientId);
+    public Set<Concept> getAllergyConceptsToDrugOrdersInEncounter(Encounter encounter) {
+        try{
+            System.out.println("encounter id: " + encounter.getEncounterId());
+            OrderService orderService = Context.getOrderService();
+            List<Encounter> encounters = new ArrayList<Encounter>();
+            encounters.add(encounter);
+            List<DrugOrder> drugOrders = orderService.getOrders(DrugOrder.class, null, null, OrderService.ORDER_STATUS.ANY, null, encounters, null);
+            if(drugOrders.isEmpty()){
+                System.out.println("drug orders empty.");
+                return Collections.<Concept>emptySet();
+            }
+            System.out.println("drug orders: " + drugOrders.get(0).getDrug().getConcept().getName().getName());
+            Set<Drug> drugs = new HashSet<Drug>();
+            for(DrugOrder drugOrder: drugOrders){
+                Drug drug = drugOrder.getDrug();
+                if(drug != null){
+                    drugs.add(drug);
+                }
+            }
+            if(drugs.isEmpty()){
+                return Collections.<Concept>emptySet();
+            }
+            PersonService personService = Context.getPersonService();
+            Person person = personService.getPerson(encounter.getPatientId());
+            Set<Concept> allergiesFromActiveList = getDssDAO().getAllergiesFromActiveListByDrugs(drugs, person);
+            Set<Concept> allergiesFromObs = this.getAllergiesFromObsByDrugs(drugs,person);
+            Set<Concept> finalAllergyList = new HashSet<Concept>();
+            if(!allergiesFromActiveList.isEmpty()){
+                finalAllergyList.addAll(allergiesFromActiveList);
+            }
+            if(!allergiesFromObs.isEmpty()){
+                finalAllergyList.addAll(allergiesFromObs);
+            }
+            if(finalAllergyList.isEmpty()){
+                return Collections.<Concept>emptySet();
+            }
+            return finalAllergyList;
+        }catch(Exception e){
+            this.log.error(e);
+        }
+        return Collections.<Concept>emptySet();
     }
     
-    @Override
-    public List<Result> runGeneralizedRules(Patient patient) {
-        LogicService logicService = Context.getLogicService();
-        Rule example1 = Util.convertRule(logicService.getRule("drugAllergy"), "drugAllergy");
-        Rule example2 = Util.convertRule(logicService.getRule("drugRecommendation"), "drugRecommendation");
-        Rule example3 = Util.convertRule(logicService.getRule("drugInteraction"), "drugInteraction");
-        
-        List<Rule> rules = new ArrayList<Rule>();
-        rules.add(example1);
-        rules.add(example2);
-        rules.add(example3);
-
-        List<Result> results = this.runRules(patient, rules);
-
-        if(results.isEmpty()){
-            return Collections.<Result>emptyList();
+    public Set<Concept> getAllergiesFromObsByDrugs(Set<Drug> drugs, Person person) {
+        try{
+            if(drugs.isEmpty()){
+                return Collections.<Concept>emptySet();
+            }
+            ObsService obsService = Context.getObsService();
+            Set<Concept> drugConcepts = new HashSet<Concept>();
+            for(Drug drug: drugs){
+                drugConcepts.add(drug.getConcept());
+            }
+            
+            ConceptService conceptService = Context.getConceptService();
+            Set<Concept> alllergyConcepts = new HashSet<Concept>();
+            
+            // 1. Class: diagnosis, Data Type: N/A, e.g. "ALLERGY TO PENICILLIN"
+            // 2. Class: diagnosis, Data Type: Boolean, e.g. "ALLERGY TO FULSA"
+            for(Concept concept:drugConcepts){                
+                List<Concept> concepts = conceptService.getConceptsByName(concept.getName().getName());
+                for(Concept cncpt: concepts){
+                    if(cncpt.getName().getName().contains("ALLERG")){
+                        List<Obs> obs = obsService.getObservationsByPersonAndConcept(person, cncpt);
+                        System.out.println("size of obs: " + obs.size());
+                        if(!obs.isEmpty()){
+                            if(cncpt.getDatatype().isBoolean()){
+                                if(obs.get(0).getValueBoolean()){
+                                    alllergyConcepts.add(cncpt);
+                                }
+                            } else {
+                                alllergyConcepts.add(cncpt);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // 3. Class: Findings, Data Type: Coded, e.g. "ALLERGY MEDICATION LIST"
+            Concept allergyMedicationList = conceptService.getConceptByName("ALLERGY MEDICATION LIST");
+            System.out.println(allergyMedicationList.getName().getName());
+            if(allergyMedicationList != null && allergyMedicationList.getDatatype().isCoded()){
+                List<Obs> obs = obsService.getObservationsByPersonAndConcept(person, allergyMedicationList);
+                for(Obs ob:obs){
+                    Concept codedValue = ob.getValueCoded();
+                    if(drugConcepts.contains(codedValue)){
+                        alllergyConcepts.add(codedValue);
+                    }
+                }
+            }
+            
+            if(alllergyConcepts.isEmpty()){
+                return Collections.<Concept>emptySet();
+            }
+            
+            return alllergyConcepts;
+            
+        }catch(Exception e){
+            this.log.equals(e);
         }
-        return results;
+        return Collections.<Concept>emptySet();
     }
+     
+    public Set<Concept> getAllergiesFromObsByDrug(Drug drug, Person person) {
+        
+        Set<Drug> drugs = new HashSet<Drug>();
+        drugs.add(drug);
+        return getAllergiesFromObsByDrugs(drugs, person);
+        
+    }    
+        
 
     @Override
     public List<Rule> getGeneralizedRules() {
@@ -492,4 +722,19 @@ public class DssServiceImpl implements DssService {
         
         return rules;
     }
+
+    @Override
+    public List<Rule> getGeneralizedJavaRules() {
+        LogicService logicService = Context.getLogicService();
+        Rule rule1 = Util.convertRule(logicService.getRule("allergiesToDrugOrders"), "allergiesToDrugOrders");
+        Rule rule2 = Util.convertRule(logicService.getRule("drugRecommendation"), "drugRecommendation");
+        Rule rule3 = Util.convertRule(logicService.getRule("drugInteraction"), "drugInteraction");
+        List<Rule> rules = new ArrayList<Rule>();
+        rules.add(rule1);
+        rules.add(rule2);
+        rules.add(rule3);
+        return rules;
+    }
+
+
 }
