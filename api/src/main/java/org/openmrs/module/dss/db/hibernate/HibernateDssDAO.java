@@ -507,21 +507,27 @@ public class HibernateDssDAO implements DssDAO {
 
   
     @Override
-    public List<Concept> getInteractionListByDrugConcepts(Set<Concept> concepts){
+    public List<Concept> getInteractionListByDrugs(Set<Drug> drugs){
         
         try {
-            if (concepts == null || concepts.isEmpty()) {
+            if (drugs == null || drugs.isEmpty()) {
                 return Collections.<Concept>emptyList();  
             }
+            
+            Set<Concept> drugConcepts = new HashSet<Concept>();
+            for(Drug drug: drugs){
+                drugConcepts.add(drug.getConcept());
+            }
+            
             
             List<Integer> conceptsIdList = new ArrayList<Integer>();
             StringBuilder query1 = new StringBuilder();
             query1.append("SELECT DISTINCT p.drug_concept_B_id");
             query1.append(" from poor_drug_interactions p");
             query1.append(" WHERE p.drug_concept_A_id IN (");
-            int remainingElements1 = concepts.size();
-            for(Concept concept: concepts){
-                query1.append(concept.getConceptId());
+            int remainingElements1 = drugConcepts.size();
+            for(Concept drugConcept: drugConcepts){
+                query1.append(drugConcept.getConceptId());
                 remainingElements1--;
                 if(remainingElements1 > 0){
                     query1.append(",");
@@ -543,9 +549,9 @@ public class HibernateDssDAO implements DssDAO {
             query2.append("SELECT DISTINCT p.drug_concept_A_id");
             query2.append(" from poor_drug_interactions p");
             query2.append(" WHERE p.drug_concept_B_id IN (");
-            int remainingElements2 = concepts.size();
-            for(Concept concept: concepts){
-                query2.append(concept.getConceptId());
+            int remainingElements2 = drugConcepts.size();
+            for(Concept drugConcept: drugConcepts){
+                query2.append(drugConcept.getConceptId());
                 remainingElements2--;
                 if(remainingElements2 > 0){
                     query2.append(",");
@@ -583,10 +589,10 @@ public class HibernateDssDAO implements DssDAO {
     }
     
     @Override
-    public List<Concept> getInteractionListByDrugConcept(Concept concept) {
-        Set<Concept> concepts = new HashSet<Concept>();
-        concepts.add(concept);
-        return this.getInteractionListByDrugConcepts(concepts);
+    public List<Concept> getInteractionListByDrug(Drug drug) {
+        Set<Drug> drugs = new HashSet<Drug>();
+        drugs.add(drug);
+        return this.getInteractionListByDrugs(drugs);
     }
 
     @Override

@@ -506,7 +506,7 @@ public class DssServiceImpl implements DssService {
     }
 
     @Override
-    public Map<Concept,Set<Concept>> getPoorDrugInteractionsForEncounter(Encounter encounter, Integer patientId) {
+    public Map<Drug,Set<Drug>> getPoorDrugInteractionsForEncounter(Encounter encounter, Integer patientId) {
        try {
            OrderService orderService = Context.getOrderService();
 
@@ -518,13 +518,13 @@ public class DssServiceImpl implements DssService {
             List<DrugOrder> drugOrders = orderService.getOrders(DrugOrder.class, null, null, OrderService.ORDER_STATUS.ANY, null, encounters, null);
             if(drugOrders.isEmpty()){
                 System.out.println("drug orders empty in drug interaction.");
-                return Collections.<Concept,Set<Concept>>emptyMap();
+                return Collections.<Drug,Set<Drug>>emptyMap();
             }
 
-            Map<Concept,Set<Concept>> resultList = this.getDrugInteractionsByDrugOrders(drugOrders,patientId);
+            Map<Drug,Set<Drug>> resultList = this.getDrugInteractionsByDrugOrders(drugOrders,patientId);
             
             if(resultList.isEmpty()){
-                return Collections.<Concept,Set<Concept>>emptyMap();
+                return Collections.<Drug,Set<Drug>>emptyMap();
             }
             return resultList;
 
@@ -533,46 +533,47 @@ public class DssServiceImpl implements DssService {
             this.log.error(Util.getStackTrace(e));
         }
 
-        return Collections.<Concept,Set<Concept>>emptyMap();
+        return Collections.<Drug,Set<Drug>>emptyMap();
     }
 
     
-    public Map<Concept,Set<Concept>> getDrugInteractionsByDrugOrders(List<DrugOrder> drugOrders, Integer patientId) {
+    public Map<Drug,Set<Drug>> getDrugInteractionsByDrugOrders(List<DrugOrder> drugOrders, Integer patientId) {
        try {
          
            if(drugOrders.isEmpty()){
-               return Collections.<Concept,Set<Concept>>emptyMap();
+               return Collections.<Drug,Set<Drug>>emptyMap();
            }
            
            // use HashSet to eliminate duplicates
-           Set<Concept> drugConcepts = new HashSet<Concept>();
+           Set<Drug> drugs = new HashSet<Drug>();
            
            for(DrugOrder drugOrder: drugOrders){
                Drug drug = drugOrder.getDrug();
                if(drug != null){
-                    drugConcepts.add(drug.getConcept());
+                    drugs.add(drug);
                }
            }
            
-           Map<Concept,Set<Concept>> resultSet = new HashMap<Concept,Set<Concept>>();
+           if(drugs.isEmpty()){
+               return Collections.<Drug,Set<Drug>>emptyMap();
+           }
            
-           for(Concept drugConcept: drugConcepts){
-               List<Concept> interactionListByDrugConcept = getDssDAO().getInteractionListByDrugConcept(drugConcept);
-               if(!interactionListByDrugConcept.isEmpty()){
-                   Set<Drug> drugsInInteractionList = getDssDAO().getDrugsInInteractionList(interactionListByDrugConcept, patientId);
+           Map<Drug,Set<Drug>> resultSet = new HashMap<Drug,Set<Drug>>();
+           
+           for(Drug drug: drugs){
+               
+               List<Concept> interactionListByDrug = getDssDAO().getInteractionListByDrug(drug);
+               if(!interactionListByDrug.isEmpty()){
+                   Set<Drug> drugsInInteractionList = getDssDAO().getDrugsInInteractionList(interactionListByDrug, patientId);
                    if(!drugsInInteractionList.isEmpty()){
-                        Set<Concept> interactionResult = new HashSet<Concept>();
-                        for(Drug drug: drugsInInteractionList){
-                        interactionResult.add(drug.getConcept());
-                        }
-                       resultSet.put(drugConcept, interactionResult);
+                       resultSet.put(drug, drugsInInteractionList);
                    }
                }
                
            }
             
             if(resultSet.isEmpty()){
-                return Collections.<Concept,Set<Concept>>emptyMap();
+                return Collections.<Drug,Set<Drug>>emptyMap();
             }
             
             return resultSet;
@@ -581,13 +582,13 @@ public class DssServiceImpl implements DssService {
             this.log.error(Util.getStackTrace(e));
         }
 
-        return Collections.<Concept,Set<Concept>>emptyMap();  
+        return Collections.<Drug,Set<Drug>>emptyMap(); 
     }
 
     
-    public Map<Concept,Set<Concept>> getDrugInteractionsByDrugOrder(DrugOrder drugOrder, Integer patientId) {
+    public Map<Drug,Set<Drug>> getDrugInteractionsByDrugOrder(DrugOrder drugOrder, Integer patientId) {
         if (drugOrder == null) {
-            return Collections.<Concept,Set<Concept>>emptyMap();
+            return Collections.<Drug,Set<Drug>>emptyMap();
         }
         List<DrugOrder> drugOrders = new ArrayList<DrugOrder>();
         drugOrders.add(drugOrder);

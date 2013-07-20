@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.openmrs.Concept;
+import org.openmrs.Drug;
 import org.openmrs.DrugOrder;
 import org.openmrs.Encounter;
 import org.openmrs.Obs;
@@ -190,7 +191,7 @@ public interface DssService {
      * @param encounter
      * @return 
      */
-    public Map<Concept,Set<Concept>> getPoorDrugInteractionsForEncounter(Encounter encounter, Integer patientId);
+    public Map<Drug,Set<Drug>> getPoorDrugInteractionsForEncounter(Encounter encounter, Integer patientId);
     
     /**
      * Returns a set of concepts each of which indicates allergy to a drug

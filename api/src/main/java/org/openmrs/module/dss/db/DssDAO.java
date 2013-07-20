@@ -149,9 +149,9 @@ public interface DssDAO {
     public Set<Drug> getActiveMedicationsByDrugOrders(List<DrugOrder> drugOrders);
 
 
-    public List<Concept> getInteractionListByDrugConcepts(Set<Concept> concepts);
+    public List<Concept> getInteractionListByDrugs(Set<Drug> drugs);
     
-    public List<Concept> getInteractionListByDrugConcept(Concept concept);
+    public List<Concept> getInteractionListByDrug(Drug drug);
     
     public Set<Drug> getDrugsInInteractionList(List<Concept> interactionConcepts, Integer patientId);
     
