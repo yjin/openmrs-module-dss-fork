@@ -155,5 +155,5 @@ public interface DssDAO {
     
     public Set<Drug> getDrugsInInteractionList(List<Concept> interactionConcepts, Integer patientId);
     
-    public Set<Concept> getAllergiesFromActiveListByDrugs(Set<Drug> drugs, Person person);
+    public Set<Drug> getAllergiesFromActiveListByDrugs(Set<Drug> drugs, Person person);
 }

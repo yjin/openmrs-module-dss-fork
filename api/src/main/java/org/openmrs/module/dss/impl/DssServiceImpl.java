@@ -596,18 +596,20 @@ public class DssServiceImpl implements DssService {
     }
 
     @Override
-    public Set<Concept> getAllergyConceptsToDrugOrdersInEncounter(Encounter encounter) {
+    public Set<Drug> getAllergiesToDrugOrdersInEncounter(Encounter encounter, Integer patientId) {
         try{
             System.out.println("encounter id: " + encounter.getEncounterId());
             OrderService orderService = Context.getOrderService();
             List<Encounter> encounters = new ArrayList<Encounter>();
             encounters.add(encounter);
+            // get drug orders in this encounter
             List<DrugOrder> drugOrders = orderService.getOrders(DrugOrder.class, null, null, OrderService.ORDER_STATUS.ANY, null, encounters, null);
             if(drugOrders.isEmpty()){
                 System.out.println("drug orders empty.");
-                return Collections.<Concept>emptySet();
+                return Collections.<Drug>emptySet();
             }
             System.out.println("drug orders: " + drugOrders.get(0).getDrug().getConcept().getName().getName());
+            // take out drugs associated with these drug orders
             Set<Drug> drugs = new HashSet<Drug>();
             for(DrugOrder drugOrder: drugOrders){
                 Drug drug = drugOrder.getDrug();
@@ -616,13 +618,18 @@ public class DssServiceImpl implements DssService {
                 }
             }
             if(drugs.isEmpty()){
-                return Collections.<Concept>emptySet();
+                System.out.println("drugs is empty");
+                return Collections.<Drug>emptySet();
             }
+            System.out.println("drugs is not empty.");
+            System.out.println("the size of drugs is " + drugs.size());
+            System.out.println("the drugs are: " + drugs.toString());
             PersonService personService = Context.getPersonService();
-            Person person = personService.getPerson(encounter.getPatientId());
-            Set<Concept> allergiesFromActiveList = getDssDAO().getAllergiesFromActiveListByDrugs(drugs, person);
-            Set<Concept> allergiesFromObs = this.getAllergiesFromObsByDrugs(drugs,person);
-            Set<Concept> finalAllergyList = new HashSet<Concept>();
+            Person person = personService.getPerson(patientId);
+            System.out.println("persion name is " + person.getGivenName());
+            Set<Drug> allergiesFromActiveList = getDssDAO().getAllergiesFromActiveListByDrugs(drugs, person);
+            Set<Drug> allergiesFromObs = this.getAllergiesFromObsByDrugs(drugs,person);
+            Set<Drug> finalAllergyList = new HashSet<Drug>();
             if(!allergiesFromActiveList.isEmpty()){
                 finalAllergyList.addAll(allergiesFromActiveList);
             }
@@ -630,76 +637,93 @@ public class DssServiceImpl implements DssService {
                 finalAllergyList.addAll(allergiesFromObs);
             }
             if(finalAllergyList.isEmpty()){
-                return Collections.<Concept>emptySet();
+                return Collections.<Drug>emptySet();
             }
             return finalAllergyList;
         }catch(Exception e){
             this.log.error(e);
         }
-        return Collections.<Concept>emptySet();
+        return Collections.<Drug>emptySet();
     }
     
-    public Set<Concept> getAllergiesFromObsByDrugs(Set<Drug> drugs, Person person) {
+    public Set<Drug> getAllergiesFromObsByDrugs(Set<Drug> drugs, Person person) {
         try{
             if(drugs.isEmpty()){
-                return Collections.<Concept>emptySet();
+                System.out.println("2. the passed drugs is empty.");
+                return Collections.<Drug>emptySet();
             }
+            System.out.println("person id is " + person.getPersonId());
+            
             ObsService obsService = Context.getObsService();
-            Set<Concept> drugConcepts = new HashSet<Concept>();
-            for(Drug drug: drugs){
-                drugConcepts.add(drug.getConcept());
-            }
             
             ConceptService conceptService = Context.getConceptService();
-            Set<Concept> alllergyConcepts = new HashSet<Concept>();
+            Set<Drug> allergyDrugs = new HashSet<Drug>();
+
+            // get all observations of this patient
+
+            List<Obs> obs = obsService.getObservationsByPerson(person);
+            if(obs.isEmpty()){
+                System.out.println("obs is empty.");
+                return Collections.<Drug>emptySet();
+            }
+            
+            System.out.println("obs is not empty. the size of obs is " + obs.size());
+            
+            Concept allergyMedicationList = conceptService.getConceptByName("ALLERGY MEDICATION LIST");
+            System.out.println("allergy medication list: " + allergyMedicationList.getName().getName());
             
             // 1. Class: diagnosis, Data Type: N/A, e.g. "ALLERGY TO PENICILLIN"
             // 2. Class: diagnosis, Data Type: Boolean, e.g. "ALLERGY TO FULSA"
-            for(Concept concept:drugConcepts){                
-                List<Concept> concepts = conceptService.getConceptsByName(concept.getName().getName());
-                for(Concept cncpt: concepts){
-                    if(cncpt.getName().getName().contains("ALLERG")){
-                        List<Obs> obs = obsService.getObservationsByPersonAndConcept(person, cncpt);
-                        System.out.println("size of obs: " + obs.size());
-                        if(!obs.isEmpty()){
-                            if(cncpt.getDatatype().isBoolean()){
-                                if(obs.get(0).getValueBoolean()){
-                                    alllergyConcepts.add(cncpt);
-                                }
-                            } else {
-                                alllergyConcepts.add(cncpt);
+            
+
+            for(Drug drug:drugs){                 
+                System.out.println("drug is " + drug.getConcept().getName().getName());
+                for(Obs ob: obs){
+                    String conceptName = ob.getConcept().getName().getName();
+                    System.out.println("concept name is " + conceptName);
+                    if(conceptName.contains(drug.getConcept().getName().getName()) && conceptName.contains("ALLERG")){
+                        System.out.println(conceptName);
+                        if(ob.getConcept().getDatatype().isBoolean()){
+                            if(ob.getValueAsBoolean()){
+                                allergyDrugs.add(drug);
+//                                continue;
                             }
+                        } else {
+                            System.out.println(" allergy is " + conceptName);
+                            allergyDrugs.add(drug);
+//                            continue;
                         }
                     }
-                }
-            }
-            
-            // 3. Class: Findings, Data Type: Coded, e.g. "ALLERGY MEDICATION LIST"
-            Concept allergyMedicationList = conceptService.getConceptByName("ALLERGY MEDICATION LIST");
-            System.out.println(allergyMedicationList.getName().getName());
-            if(allergyMedicationList != null && allergyMedicationList.getDatatype().isCoded()){
-                List<Obs> obs = obsService.getObservationsByPersonAndConcept(person, allergyMedicationList);
-                for(Obs ob:obs){
-                    Concept codedValue = ob.getValueCoded();
-                    if(drugConcepts.contains(codedValue)){
-                        alllergyConcepts.add(codedValue);
+                    // the following code is not working...
+
+                    if(ob.getConcept().equals(allergyMedicationList) && drug.getConcept().equals(ob.getValueCoded())){
+                        System.out.println("yes, the concept of drug is equal to the concept of value coded.");
+                        allergyDrugs.add(drug);
+//                            continue;
                     }
+                                      
                 }
             }
             
-            if(alllergyConcepts.isEmpty()){
-                return Collections.<Concept>emptySet();
+            // 3. Class: Findings, Data Type: Coded, e.g. "ALLERGY MEDICATION LIST" 
+            
+            
+            System.out.println(allergyMedicationList.getName().getName());
+
+            
+            if(allergyDrugs.isEmpty()){
+                return Collections.<Drug>emptySet();
             }
             
-            return alllergyConcepts;
+            return allergyDrugs;
             
         }catch(Exception e){
             this.log.equals(e);
         }
-        return Collections.<Concept>emptySet();
+        return Collections.<Drug>emptySet();
     }
      
-    public Set<Concept> getAllergiesFromObsByDrug(Drug drug, Person person) {
+    public Set<Drug> getAllergiesFromObsByDrug(Drug drug, Person person) {
         
         Set<Drug> drugs = new HashSet<Drug>();
         drugs.add(drug);

@@ -607,7 +607,9 @@ public class HibernateDssDAO implements DssDAO {
             query.append("SELECT DISTINCT d.order_id");
             query.append(" FROM drug_order d");
             query.append(" JOIN orders o ON (d.order_id = o.order_id)");
-            query.append(" WHERE o.discontinued = 0");
+            query.append(" WHERE o.patient_id =");
+            query.append(patientId);
+            query.append(" AND o.discontinued = 0");
             query.append(" AND o.order_type_id = 2");
             query.append(" AND o.auto_expire_date > DATE(NOW())");
             query.append(" OR o.auto_expire_date is null");
@@ -642,16 +644,14 @@ public class HibernateDssDAO implements DssDAO {
     }
 
     @Override
-    public Set<Concept> getAllergiesFromActiveListByDrugs(Set<Drug> drugs, Person person) {
+    public Set<Drug> getAllergiesFromActiveListByDrugs(Set<Drug> drugs, Person person) {
         try{
             if(drugs.isEmpty()){
-                return Collections.<Concept>emptySet();
+                System.out.println("the passed drugs are empty?");
+                return Collections.<Drug>emptySet();
             }
-            Set<Concept> drugConcepts = new HashSet<Concept>();
-            for(Drug drug: drugs){
-                drugConcepts.add(drug.getConcept());
-            }
-            Set<Concept> resultSet = new HashSet<Concept>();
+
+            Set<Drug> resultSet = new HashSet<Drug>();
             
             // the following code does not work with raxa encounter controller, but work with Rule Tester.
             /* 
@@ -669,13 +669,15 @@ public class HibernateDssDAO implements DssDAO {
                 
             }
             */
-            
+            System.out.println("person id is " + person.getPersonId());
             // we use mysql query to address the above problem
             StringBuilder query = new StringBuilder();
             query.append("SELECT DISTINCT a.concept_id");
             query.append(" FROM active_list a");
             query.append(" JOIN active_list_allergy aa ON (a.active_list_id = aa.active_list_id)");
-            query.append(" WHERE  a.voided = 0");
+            query.append(" WHERE a.person_id =");
+            query.append(person.getPersonId());
+            query.append(" AND  a.voided = 0");
             query.append(" AND aa.reaction_concept_id = 1065");
             query.append(" AND a.end_date > DATE(NOW())");
             query.append(" OR a.end_date is null");
@@ -689,20 +691,23 @@ public class HibernateDssDAO implements DssDAO {
             
             for(Integer conceptId: conceptIds){
                 Concept concept = conceptService.getConcept(conceptId);
-                if(drugConcepts.contains(concept)){
-                    resultSet.add(concept);
-                }                
+                for(Drug drug: drugs){
+                    if(drug.getConcept().equals(concept)){
+                        resultSet.add(drug);
+                        break;
+                    }                
+                }
             }
             
             if(resultSet.isEmpty()){
                 System.out.println("active list is empty");
-                return Collections.<Concept>emptySet();
+                return Collections.<Drug>emptySet();
             }
             return resultSet;
         }catch(Exception e){
             this.log.equals(e);
         }
-        return Collections.<Concept>emptySet();
+        return Collections.<Drug>emptySet();
     }
 
 

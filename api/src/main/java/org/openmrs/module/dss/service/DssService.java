@@ -198,7 +198,7 @@ public interface DssService {
      * @param encounter
      * @return 
      */
-    public Set<Concept> getAllergyConceptsToDrugOrdersInEncounter(Encounter encounter);
+    public Set<Drug> getAllergiesToDrugOrdersInEncounter(Encounter encounter, Integer patientId);
     
     
     /**
