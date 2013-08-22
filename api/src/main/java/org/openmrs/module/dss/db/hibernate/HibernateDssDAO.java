@@ -399,6 +399,42 @@ public class HibernateDssDAO implements DssDAO {
 
 
     @Override
+    public boolean addAssociatedPrescriptions(Concept diagnosisConcept, List<Concept> drugConcepts){
+        try {
+
+            // build the SQL query
+            StringBuilder sb = new StringBuilder();
+
+            sb.append("INSERT IGNORE INTO diagnosis_to_drug (diagnosis_concept_id, drug_concept_id) VALUES ");
+
+            int remaining = drugConcepts.size();
+            for (Concept drugConcept : drugConcepts) {
+                remaining--;
+                sb.append('(');
+                sb.append(diagnosisConcept.getConceptId());
+                sb.append(',');
+                sb.append(drugConcept.getConceptId());
+                sb.append(')');
+                if (remaining > 0) {
+                    sb.append(',');
+                }
+            }
+
+            SQLQuery query = sessionFactory.getCurrentSession().createSQLQuery(sb.toString());
+            int rowsCreated = query.executeUpdate();
+
+            return rowsCreated == drugConcepts.size();
+
+        } catch (Exception e) {
+            this.log.error(Util.getStackTrace(e));
+            return false;
+        }   
+    }
+            
+            
+            
+            
+    @Override
     public List<Concept> getDrugRecommendationByOb(Obs ob) {
         try {
 
@@ -414,7 +450,6 @@ public class HibernateDssDAO implements DssDAO {
 
             // scalar query
             SQLQuery qry = this.sessionFactory.getCurrentSession().createSQLQuery(query.toString());
-  //          qry.addEntity(Integer.class);
 
             List<Integer> drugConceptIds = qry.list();
             
@@ -454,6 +489,36 @@ public class HibernateDssDAO implements DssDAO {
 
         return hm;
     }
+    
+    @Override
+    public List<Drug> getRecommendedDrugsbyDiagnosisConcept(Concept concept){
+        try {
+
+            StringBuilder query = new StringBuilder();
+            query.append("SELECT DISTINCT d.*");
+            query.append(" from drug d");
+            query.append(" JOIN diagnosis_to_drug dtd ON (d.concept_id = dtd.drug_concept_id)");
+            query.append(" where dtd.diagnosis_concept_id =");
+            query.append(concept.getConceptId());
+
+            // scalar query
+            SQLQuery qry = this.sessionFactory.getCurrentSession().createSQLQuery(query.toString());
+            qry.addEntity(Drug.class);
+
+            List<Drug> drugs = qry.list();
+            
+            if(drugs.isEmpty()){
+                return Collections.<Drug>emptyList();
+            }
+
+            return drugs;
+
+        } catch (Exception e) {
+            this.log.error(Util.getStackTrace(e));
+        }
+
+        return Collections.<Drug>emptyList();
+    }
 
     @Override
     public Set<Drug> getActiveMedicationsByDrugOrders(List<DrugOrder> drugOrders){
@@ -477,7 +542,7 @@ public class HibernateDssDAO implements DssDAO {
             query.append(")");
             // scalar query
             SQLQuery qry = this.sessionFactory.getCurrentSession().createSQLQuery(query.toString());
-
+            
             List<Integer> orderIds = qry.list();
             
             if(orderIds.isEmpty()){
@@ -647,7 +712,6 @@ public class HibernateDssDAO implements DssDAO {
     public Set<Drug> getAllergiesFromActiveListByDrugs(Set<Drug> drugs, Person person) {
         try{
             if(drugs.isEmpty()){
-                System.out.println("the passed drugs are empty?");
                 return Collections.<Drug>emptySet();
             }
 
@@ -660,8 +724,7 @@ public class HibernateDssDAO implements DssDAO {
             ConceptService conceptService = Context.getConceptService();
             Concept positiveReaction = conceptService.getConceptByName("YES");
             for(Concept concept: drugConcepts){
-                for(Allergy allergy: allergens){
-                    System.out.println("allergen: " + allergy.getAllergen().getName().getName() + " " + allergy.getReaction().getName().getName());               
+                for(Allergy allergy: allergens){              
                     if(allergy.getReaction().equals(positiveReaction) && allergy.getAllergen().equals(concept)){
                             resultSet.add(concept);
                     }
@@ -669,7 +732,7 @@ public class HibernateDssDAO implements DssDAO {
                 
             }
             */
-            System.out.println("person id is " + person.getPersonId());
+
             // we use mysql query to address the above problem
             StringBuilder query = new StringBuilder();
             query.append("SELECT DISTINCT a.concept_id");
@@ -694,13 +757,13 @@ public class HibernateDssDAO implements DssDAO {
                 for(Drug drug: drugs){
                     if(drug.getConcept().equals(concept)){
                         resultSet.add(drug);
+                        drugs.remove(drug);
                         break;
                     }                
                 }
             }
             
             if(resultSet.isEmpty()){
-                System.out.println("active list is empty");
                 return Collections.<Drug>emptySet();
             }
             return resultSet;

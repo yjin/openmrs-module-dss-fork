@@ -179,11 +179,21 @@ public interface DssService {
     public org.openmrs.logic.Rule loadRule(String rule, boolean updateRule) throws Exception;
     
     /**
+     * Maps a concept of diagnosis class to a list of concepts of drug class
+     * @param diagnosisConcept
+     * @param drugConcepts
+     * @return 
+     */
+    public boolean addAssociatedPrescriptions(Concept diagnosisConcept, List<Concept> drugConcepts);
+    /**
      * Returns a <Concept,List<Concept>> map from the diagnosis_drug table
      * 
      * @return List<Concpt>
      */
     public Map<Concept,List<Concept>> getDrugRecommendationForEncounter(Encounter encounter);
+    
+    
+    public List<Drug> getRecommendedDrugsbyObservationConcept(Concept concept);
     
     
     /**

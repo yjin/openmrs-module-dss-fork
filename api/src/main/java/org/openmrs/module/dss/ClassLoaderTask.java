@@ -106,9 +106,17 @@ public class ClassLoaderTask extends AbstractTask {
         // look for mlm file rule tokens
         HashMap<String, File> mlmFileMap = this.lookForRules(this.mlmRuleDirectory, ".mlm");
 
+        String javaFileDirectory = "";
+        if (this.classRulesDirectory != null) {
+            javaFileDirectory = this.javaRuleDirectory;
+        }
+        if (this.rulePackagePrefix != null) {
+            javaFileDirectory += this.rulePackagePrefix.replace('.', '/');
+        }
+        
         // look for java file rule tokens
-        HashMap<String, File> javaFileMap = this.lookForRules(this.javaRuleDirectory, ".java");
-
+        HashMap<String, File> javaFileMap = this.lookForRules(javaFileDirectory, ".java");
+        
         String classDirectory = "";
         if (this.classRulesDirectory != null) {
             classDirectory = this.classRulesDirectory;

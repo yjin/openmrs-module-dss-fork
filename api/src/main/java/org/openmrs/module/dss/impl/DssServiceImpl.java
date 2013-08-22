@@ -8,6 +8,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.Concept;
@@ -437,15 +439,27 @@ public class DssServiceImpl implements DssService {
     }
     
     @Override
+    public boolean addAssociatedPrescriptions(Concept diagnosisConcept, List<Concept> drugConcepts){
+        if(diagnosisConcept == null) {
+            return false;
+        }
+        if(drugConcepts.isEmpty()){
+            return false;
+        }
+        
+        return getDssDAO().addAssociatedPrescriptions(diagnosisConcept, drugConcepts);
+        
+    }
+            
+            
+    @Override
     public Map<Concept,List<Concept>> getDrugRecommendationForEncounter(Encounter encounter){
         try {
             OrderService orderService = Context.getOrderService();
             
             // get obs from encounter
             Set<Obs> obs = encounter.getObs();
-            System.out.println("encounter id: " + encounter.getEncounterId());
             if(obs.isEmpty()){
-                System.out.println("obs is empty. drug recommendation.");
                 return Collections.<Concept,List<Concept>>emptyMap();
             }         
             // get all drug recommendations to the obs of this encounter
@@ -505,6 +519,13 @@ public class DssServiceImpl implements DssService {
         return Collections.<Concept,List<Concept>>emptyMap();
     }
 
+    
+    @Override
+    public List<Drug> getRecommendedDrugsbyObservationConcept(Concept concept) {
+        return getDssDAO().getRecommendedDrugsbyDiagnosisConcept(concept);
+    }
+    
+    
     @Override
     public Map<Drug,Set<Drug>> getPoorDrugInteractionsForEncounter(Encounter encounter, Integer patientId) {
        try {
@@ -517,7 +538,6 @@ public class DssServiceImpl implements DssService {
             encounters.add(encounter);
             List<DrugOrder> drugOrders = orderService.getOrders(DrugOrder.class, null, null, OrderService.ORDER_STATUS.ANY, null, encounters, null);
             if(drugOrders.isEmpty()){
-                System.out.println("drug orders empty in drug interaction.");
                 return Collections.<Drug,Set<Drug>>emptyMap();
             }
 
@@ -598,17 +618,14 @@ public class DssServiceImpl implements DssService {
     @Override
     public Set<Drug> getAllergiesToDrugOrdersInEncounter(Encounter encounter, Integer patientId) {
         try{
-            System.out.println("encounter id: " + encounter.getEncounterId());
             OrderService orderService = Context.getOrderService();
             List<Encounter> encounters = new ArrayList<Encounter>();
             encounters.add(encounter);
             // get drug orders in this encounter
             List<DrugOrder> drugOrders = orderService.getOrders(DrugOrder.class, null, null, OrderService.ORDER_STATUS.ANY, null, encounters, null);
             if(drugOrders.isEmpty()){
-                System.out.println("drug orders empty.");
                 return Collections.<Drug>emptySet();
             }
-            System.out.println("drug orders: " + drugOrders.get(0).getDrug().getConcept().getName().getName());
             // take out drugs associated with these drug orders
             Set<Drug> drugs = new HashSet<Drug>();
             for(DrugOrder drugOrder: drugOrders){
@@ -618,15 +635,10 @@ public class DssServiceImpl implements DssService {
                 }
             }
             if(drugs.isEmpty()){
-                System.out.println("drugs is empty");
                 return Collections.<Drug>emptySet();
             }
-            System.out.println("drugs is not empty.");
-            System.out.println("the size of drugs is " + drugs.size());
-            System.out.println("the drugs are: " + drugs.toString());
             PersonService personService = Context.getPersonService();
             Person person = personService.getPerson(patientId);
-            System.out.println("persion name is " + person.getGivenName());
             Set<Drug> allergiesFromActiveList = getDssDAO().getAllergiesFromActiveListByDrugs(drugs, person);
             Set<Drug> allergiesFromObs = this.getAllergiesFromObsByDrugs(drugs,person);
             Set<Drug> finalAllergyList = new HashSet<Drug>();
@@ -649,10 +661,8 @@ public class DssServiceImpl implements DssService {
     public Set<Drug> getAllergiesFromObsByDrugs(Set<Drug> drugs, Person person) {
         try{
             if(drugs.isEmpty()){
-                System.out.println("2. the passed drugs is empty.");
                 return Collections.<Drug>emptySet();
             }
-            System.out.println("person id is " + person.getPersonId());
             
             ObsService obsService = Context.getObsService();
             
@@ -663,54 +673,40 @@ public class DssServiceImpl implements DssService {
 
             List<Obs> obs = obsService.getObservationsByPerson(person);
             if(obs.isEmpty()){
-                System.out.println("obs is empty.");
                 return Collections.<Drug>emptySet();
             }
             
-            System.out.println("obs is not empty. the size of obs is " + obs.size());
             
             Concept allergyMedicationList = conceptService.getConceptByName("ALLERGY MEDICATION LIST");
-            System.out.println("allergy medication list: " + allergyMedicationList.getName().getName());
             
             // 1. Class: diagnosis, Data Type: N/A, e.g. "ALLERGY TO PENICILLIN"
             // 2. Class: diagnosis, Data Type: Boolean, e.g. "ALLERGY TO FULSA"
-            
+            // 3. Class: Findings, Data Type: Coded, e.g. "ALLERGY MEDICATION LIST" 
 
             for(Drug drug:drugs){                 
-                System.out.println("drug is " + drug.getConcept().getName().getName());
                 for(Obs ob: obs){
                     String conceptName = ob.getConcept().getName().getName();
-                    System.out.println("concept name is " + conceptName);
                     if(conceptName.contains(drug.getConcept().getName().getName()) && conceptName.contains("ALLERG")){
-                        System.out.println(conceptName);
                         if(ob.getConcept().getDatatype().isBoolean()){
                             if(ob.getValueAsBoolean()){
                                 allergyDrugs.add(drug);
-//                                continue;
+                                continue;                                
                             }
                         } else {
-                            System.out.println(" allergy is " + conceptName);
                             allergyDrugs.add(drug);
-//                            continue;
+                            continue;
+                            
                         }
                     }
-                    // the following code is not working...
 
                     if(ob.getConcept().equals(allergyMedicationList) && drug.getConcept().equals(ob.getValueCoded())){
-                        System.out.println("yes, the concept of drug is equal to the concept of value coded.");
                         allergyDrugs.add(drug);
-//                            continue;
+                        
                     }
                                       
                 }
-            }
-            
-            // 3. Class: Findings, Data Type: Coded, e.g. "ALLERGY MEDICATION LIST" 
-            
-            
-            System.out.println(allergyMedicationList.getName().getName());
-
-            
+            }     
+           
             if(allergyDrugs.isEmpty()){
                 return Collections.<Drug>emptySet();
             }
@@ -749,7 +745,7 @@ public class DssServiceImpl implements DssService {
     }
 
     @Override
-    public List<Rule> getGeneralizedJavaRules() {
+    public List<Rule> getGeneralizedJavaRules() {           
         LogicService logicService = Context.getLogicService();
         Rule rule1 = Util.convertRule(logicService.getRule("allergiesToDrugOrders"), "allergiesToDrugOrders");
         Rule rule2 = Util.convertRule(logicService.getRule("drugRecommendation"), "drugRecommendation");
@@ -760,6 +756,5 @@ public class DssServiceImpl implements DssService {
         rules.add(rule3);
         return rules;
     }
-
 
 }

@@ -126,6 +126,15 @@ public interface DssDAO {
      * @return
      */
     public List<Rule> getMappings(Concept concept);
+    
+    /**
+     * Add pairs of concept of diagnosis class and concept of drug class to diagnosis_to_drug table
+     * 
+     * @param diagnosisConcept
+     * @param drugConcepts
+     * @return 
+     */
+    public boolean addAssociatedPrescriptions(Concept diagnosisConcept, List<Concept> drugConcepts);
 
     /**
      * 
@@ -143,17 +152,45 @@ public interface DssDAO {
     
     /**
      * 
+     * @param concept
+     * @return 
+     */
+    public List<Drug> getRecommendedDrugsbyDiagnosisConcept(Concept concept);
+    
+    /**
+     * 
      * @param drugOrders
      * @return 
      */
     public Set<Drug> getActiveMedicationsByDrugOrders(List<DrugOrder> drugOrders);
 
-
+    /**
+     * 
+     * @param drugs
+     * @return 
+     */
     public List<Concept> getInteractionListByDrugs(Set<Drug> drugs);
     
+    /**
+     * 
+     * @param drug
+     * @return 
+     */
     public List<Concept> getInteractionListByDrug(Drug drug);
     
+    /**
+     * 
+     * @param interactionConcepts
+     * @param patientId
+     * @return 
+     */
     public Set<Drug> getDrugsInInteractionList(List<Concept> interactionConcepts, Integer patientId);
     
+    /**
+     * 
+     * @param drugs
+     * @param person
+     * @return 
+     */
     public Set<Drug> getAllergiesFromActiveListByDrugs(Set<Drug> drugs, Person person);
 }
