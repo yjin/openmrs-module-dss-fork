@@ -308,6 +308,9 @@ public class HibernateDssDAO implements DssDAO {
             for (Obs obs : encounter.getObs()) {
                 concepts.add(obs.getConcept());
             }
+            for (org.openmrs.Order order: encounter.getOrders()) {
+                concepts.add(order.getConcept());
+            }
 
             if (concepts.isEmpty()) {
                 return Collections.<Rule>emptyList();

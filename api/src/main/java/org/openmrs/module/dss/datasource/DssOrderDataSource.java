@@ -59,44 +59,42 @@ public class DssOrderDataSource extends RegisterAtStartupDataSourceRuleProvider 
 
 	/**
 	 * @throws LogicException
-	 * @should get all obs
-	 * @should get first obs
-	 * @should get last obs
-	 * @should get obs gt value
-	 * @should get obs ge value
-	 * @should get obs lt value
-	 * @should get obs le value
-	 * @should get obs eq value
-	 * @should get last obs if it is lt value
-	 * @should get last obs of those lt value
-	 * @should get obs before date
-	 * @should get obs after date
-	 * @should get obs gt value after date
-	 * @should get last obs if it is before date
-	 * @should get last obs of those before date
-	 * @should get first n obs
-	 * @should get last n obs
-	 * @should get first n obs of those lt value
-	 * @should get first n obs if they are lt value
+	 * @should get all orders
+	 * @should get first orders
+	 * @should get last orders
+	 * @should get orders gt value
+	 * @should get orders ge value
+	 * @should get orders lt value
+	 * @should get orders le value
+	 * @should get orders eq value
+	 * @should get orders obs if it is lt value
+	 * @should get orders obs of those lt value
+	 * @should get orders before date
+	 * @should get orders after date
+	 * @should get orders gt value after date
+	 * @should get last orders if it is before date
+	 * @should get last orders of those before date
+	 * @should get first n orders
+	 * @should get last n orders
+	 * @should get first n orders of those lt value
+	 * @should get first n orders if they are lt value
 	 * @should get not of a clause
 	 * @should get and of two clauses
 	 * @should get or of two clauses
-	 * @should get average of obs
-	 * @should get average of null when no obs
-	 * @should get count of obs when obs
-	 * @should get count of zero when no obs
-	 * @should get return obs ordered by datetime
+	 * @should get average of orders
+	 * @should get average of null when no orders
+	 * @should get count of orders when orders
+	 * @should get count of zero when no orders
+	 * @should get return orders ordered by datetime
 	 * @see org.openmrs.logic.datasource.LogicDataSource#read(org.openmrs.logic.LogicContext,
 	 *      org.openmrs.Cohort, org.openmrs.logic.LogicCriteria)
 	 */
 	public Map<Integer, Result> read(LogicContext context, Cohort patients, LogicCriteria criteria) throws LogicException {
 
 		Map<Integer, Result> finalResult = new HashMap<Integer, Result>();
-                System.out.println("get in the read call.");
-		// TODO: make the obs service method more efficient (so we don't have to re-organize
+		// TODO: make the order service method more efficient (so we don't have to re-organize
 		// into groupings by patient...or it can be done most expeditiously
 		List<Order> orders = getDssOrderDAO().getOrders(patients, criteria, context);
-                System.out.println("got orders.");
 
 		// group the received observations by patient and convert them to
 		// Results
